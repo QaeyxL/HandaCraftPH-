@@ -113,3 +113,4 @@ nameInput.addEventListener('input', () => {
   charCount.textContent = `${nameInput.value.length} / 120`;
 });
 
+
