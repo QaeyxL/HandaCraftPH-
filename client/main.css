@@ -168,4 +168,151 @@
       font-size: 14px;
       color: #333;
     }
-    
+
+/* SELL PAGE */
+#sell-page {
+  padding: 40px 30px;
+  display: flex;
+  justify-content: center;
+}
+
+.sell-container {
+  max-width: 600px;
+  width: 100%;
+  background: #fafafa;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 30px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.sell-container h2 {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.sell-container p {
+  text-align: center;
+  margin-bottom: 25px;
+  color: #555;
+}
+
+#sellForm {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+#sellForm label {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+#sellForm input,
+#sellForm select,
+#sellForm textarea {
+  padding: 10px;
+  border: 1px solid #aaa;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+/* SELL FORM BUTTONS */
+.form-buttons {
+  display: flex;
+  justify-content: center; 
+      /* might change justify-contentto flex-end or flex-start bc it looks odd i think*/
+  gap: 10px;
+  margin-top: 15px;
+}
+
+.form-buttons button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: 0.2s;
+}
+
+.form-buttons button[type="submit"] {
+  background-color: #904b1d;
+  color: white;
+}
+
+.form-buttons button[type="submit"]:hover {
+  background-color: #73350b;
+}
+
+.form-buttons button[type="button"] {
+  background-color: #7a7e83;
+  color: white;
+}
+
+.form-buttons button[type="button"]:hover {
+  background-color: #5a6268;
+}
+
+.sell-left-back-btn{
+  background-color: #7a7e83;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+  transition: 0.2s;
+}
+.sell-left-back-btn:hover {
+  background-color: #5a6268;
+}
+
+#statusMessage {
+  text-align: center;
+  margin-top: 15px;
+  color: #333;
+}
+
+/* for the image uploads */
+.preview-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.preview-item {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.preview-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* image delete button for uploads */
+.delete-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 18px;
+}
+
+.delete-btn:hover {
+  background-color: red;
+}
+

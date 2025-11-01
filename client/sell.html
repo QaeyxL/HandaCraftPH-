@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sell on HandacraftPH</title>
+  <link rel="stylesheet" href="main.css">
+</head>
+<body>
+  <header>
+    <div class="logo">
+      <h1>HandacraftPH</h1>
+      <p>Discover. Customize. Support Local.</p>
+    </div>
+    <nav>
+      <ul>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="#">Categories</a></li>
+        <li><a href="#">Customize</a></li>
+        <li><a href="sell.html">Sell</a></li>
+      </ul>
+    </nav>
+    <div class="nav-actions">
+      <input type="text" placeholder="Search">
+      <a href="">Sign Up</a>
+      <a href="">Login</a>
+    </div>
+  </header>
+
+  <section id="sell-page">
+    <div class="sell-container">
+      <button type="button" class="sell-left-back-btn" onclick="history.back()">← Back</button>
+      <br>
+      <h3> UI is not final yet guys dw will change when we have a color scheme/design plan alr</h3> 
+      <h2>Sell Your Craft</h2>
+      <p>Join our community of Filipino artisans! List your handcrafted products for free.</p>
+
+      <form id="sellForm">
+        <label for="productName">Product Name</label>
+        <input type="text" id="productName" name="productName" maxlength="120" required>
+        <small id="charCount"> 0/120</small>
+
+        <!-- placeholder for now since the user should not be typing their name manually should be fetched immediately bhy the system -->
+        <!-- <label for="artisanName">Your Name / Shop</label>
+        <input type="text" id="artisanName" name="artisanName" required> -->
+
+        <label for="price">Price (₱)</label>
+        <input type="number" id="price" name="price" min="1" required>
+
+        <label for="category">Category</label>
+        <select id="category" name="category" required>
+          <option value="">Select Category</option>
+          <option value="fashion">Fashion</option>
+          <option value="needlework">Needlework</option>
+          <option value="woodcrafts">Wood Crafts</option>
+          <option value="textile">Textile</option>
+          <option value="pottery">Pottery & Ceramics</option>
+        </select>
+
+        <label for="description">Description</label>
+        <textarea id="description" name="description" rows="4" required></textarea>
+
+        <label for="image">Upload Product Images (maximum of 10 images)</label>
+        <input type="file" id="image" name="image" accept="image/*,video/*" multiple>
+        <div id="previewContainer" style="display:flex; flex-wrap:wrap; gap:10px; margin-top:10px;"></div>
+
+        <div class="form-buttons">
+            <button type="button" onclick="history.back()"> Back</button>
+            <button type="submit">Submit Craft</button>
+        </div>
+        
+        <br>
+        <img id="imagePreview" style="display:none; max-width:200px; margin-top:10px; border:1px solid #ccc; border-radius:6px;">
+      </form>
+      <p id="statusMessage"></p>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-logo">
+      <h2>HandaCraftPH</h2>
+      <p>© 2025</p>
+    </div>
+    <div class="footer-links">
+      <a href="#">Help Center</a>
+      <a href="#">Terms</a>
+      <a href="#">Privacy</a>
+      <a href="#">About</a>
+      <a href="#">Contact Us</a>
+    </div>
+  </footer>
+
+  <script src="scripts/sell.js"></script>
+
+  
+</body>
+</html>
