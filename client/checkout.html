@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout</title>
+    <link rel="stylesheet" href="main.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">
+                HandaCraftPH
+                <div class="tagline">Discover. Customize. Support Local</div>
+            </div>
+            <h1>Checkout</h1>
+        </div>
+
+        <div class="delivery-address">
+            <div class="address-header">
+                <img src="location-icon.png" alt="Delivery Address Icon" class="address-icon">
+                Delivery Address
+            </div>
+            <div class="address-details">
+                <div class="name">Juan Dela Cruz (+63) 9XX XXX XXXX</div>
+                <div class="address-line">
+                    <div class="address">70 Loyola Heights, Katipunan Ave, Quezon City, 1108 Metro Manila</div>
+                    <span class="change-address" onclick="changeAddress()">Change</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="products">
+            <div class="products-header">
+                <img src="products-icon.png" alt="Products Icon" class="products-icon">
+                Products
+            </div>
+            <div class="product-header-row">
+                <div class="product-header"></div> <!-- Empty for image/vendor column -->
+                <div class="unit-price-header">Unit Price</div>
+                <div class="quantity-header">Qty</div>
+                <div class="item-subtotal-header">Item Subtotal</div>
+            </div>
+            <div id="product-list">
+                <!-- Product items will be dynamically added here -->
+            </div>
+        </div>
+
+        <div class="shipping-option">
+            <div class="shipping-header">
+                <img src="shipping-icon.png" alt="Shipping Icon" class="shipping-icon">
+                Shipping Option
+            </div>
+            <div class="shipping-details">
+                Standard Local <span class="shipping-cost">Php 100.00</span>
+            </div>
+        </div>
+
+        <div class="payment-method">
+            <div class="payment-header">Payment Method</div>
+            <div class="payment-options">
+                <button class="payment-button" onclick="selectPayment('Cash on Delivery')">Cash on Delivery</button>
+                <button class="payment-button" onclick="selectPayment('Credit / Debit Card')">Credit / Debit Card</button>
+                <button class="payment-button" onclick="selectPayment('GCash')">GCash</button>
+                <button class="payment-button" onclick="selectPayment('Maya')">Maya</button>
+            </div>
+        </div>
+
+        <button class="place-order" onclick="placeOrder()">Place Order</button>
+    </div>
+
+    <script src="checkout.js"></script>
+</body>
+</html>
