@@ -367,7 +367,7 @@ h1 {
     padding: 10px;
     margin-bottom: 15px;
     box-sizing: border-box;
-    position: relative; /* For absolute positioning of the "Change" link */
+    /* position: relative;  REMOVED */
 }
 
 .products,
