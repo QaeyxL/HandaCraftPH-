@@ -1,0 +1,132 @@
+{% extends 'hc_app/base.html' %}
+{% load static %}
+
+{% block content %}
+<section id="sell-page">
+  <div class="sell-container">
+    <button type="button" class="sell-left-back-btn" onclick="history.back()">← Back</button>
+
+    <h2>Sell Your Craft</h2>
+    <p>Join our community of Filipino artisans! List your handcrafted products for free.</p>
+
+    {% if success %}
+    <div class="alert alert-success" style="color: green; margin-top: 10px;">
+      ✅ Your product has been uploaded successfully!
+    </div>
+    {% endif %}
+
+    <!-- Sell Product Form -->
+    <form method="POST" enctype="multipart/form-data" id="sellForm">
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label for="id_name">Product Name</label>
+        {{ form.name }}
+      </div>
+
+      <div class="form-group">
+        <label for="id_price">Price (₱)</label>
+        {{ form.price }}
+      </div>
+
+      <div class="form-group">
+        <label for="id_category">Category</label>
+        {{ form.category }}
+      </div>
+
+      <div class="form-group">
+        <label for="id_description">Description</label>
+        {{ form.description }}
+      </div>
+
+      <div class="form-group">
+        <label for="id_image">Upload Product Images</label>
+        {{ form.image }}
+        <div id="image-preview-container" style="display:flex; flex-wrap: wrap; gap:10px;"></div>
+      </div>
+
+      <div class="form-buttons">
+        <button type="button" onclick="history.back()">Back</button>
+        <button type="submit">Submit Craft</button>
+      </div>
+    </form>
+
+    <!-- Seller's Current Listings -->
+    <h2 style="margin-top:50px;">My Listings</h2>
+    <div class="featured-grid">
+      {% for product in user_products %}
+      <div class="craft-card">
+        <div class="craft-image" style="height:200px; overflow:hidden;">
+          {% if product.image %}
+          <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width:100%; height:100%; object-fit:cover;">
+          {% endif %}
+        </div>
+        <h3>{{ product.name }}</h3>
+        <p>₱{{ product.price }}</p>
+        <p>{{ product.category.name }}</p>
+
+        <form action="{% url 'hc_app:delete_product' product.id %}" method="POST">
+          {% csrf_token %}
+          <button type="submit" class="delete-btn" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer;">Delete</button>
+        </form>
+      </div>
+      {% empty %}
+      <p>You have no listings yet.</p>
+      {% endfor %}
+    </div>
+
+  </div>
+</section>
+
+<script>
+// Image preview logic
+const fileInput = document.getElementById('id_image');
+const previewContainer = document.getElementById('image-preview-container');
+let filesArray = [];
+
+fileInput.addEventListener('change', (event) => {
+    for (const file of event.target.files) {
+        if (!file.type.startsWith('image/')) continue;
+        filesArray.push(file);
+    }
+    renderPreviews();
+});
+
+function renderPreviews() {
+    previewContainer.innerHTML = '';
+    filesArray.forEach((file, index) => {
+        const container = document.createElement('div');
+        container.style.position = 'relative';
+        container.style.display = 'inline-block';
+
+        const img = document.createElement('img');
+        img.src = URL.createObjectURL(file);
+        img.style.width = '100px';
+        img.style.height = '100px';
+        img.style.objectFit = 'cover';
+        container.appendChild(img);
+
+        const delBtn = document.createElement('button');
+        delBtn.textContent = 'X';
+        delBtn.style.position = 'absolute';
+        delBtn.style.top = '0';
+        delBtn.style.right = '0';
+        delBtn.style.background = 'red';
+        delBtn.style.color = 'white';
+        delBtn.style.border = 'none';
+        delBtn.style.cursor = 'pointer';
+        delBtn.addEventListener('click', () => {
+            filesArray.splice(index, 1);
+            renderPreviews();
+        });
+
+        container.appendChild(delBtn);
+        previewContainer.appendChild(container);
+    });
+
+    const dataTransfer = new DataTransfer();
+    filesArray.forEach(file => dataTransfer.items.add(file));
+    fileInput.files = dataTransfer.files;
+}
+</script>
+{% endblock %}

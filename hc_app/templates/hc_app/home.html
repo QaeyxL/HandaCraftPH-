@@ -1,0 +1,47 @@
+{% extends 'hc_app/base.html' %}
+
+{% block content %}
+<section id="hero">
+    <div class="hero-text">
+        <h2>Discover<br>Filipino Crafts</h2>
+        <p>Connect with local artisans and find meaningful, customizable crafts that reflect your identity.</p>
+    </div>
+</section>
+
+<section id="categories">
+    <h2>Browse Categories</h2>
+    <div class="category-list">
+        <a href="{% url 'hc_app:category_products' category_name='Fashion' %}" class="category-card">
+            <h3>Fashion</h3>
+            <p>Unique handcrafted pieces</p>
+        </a>
+        <a href="{% url 'hc_app:category_products' category_name='Needlework' %}" class="category-card">
+            <h3>Needlework</h3>
+        </a>
+        <a href="{% url 'hc_app:category_products' category_name='Wood Crafts' %}" class="category-card">
+            <h3>Wood Crafts</h3>
+            <p>Carved sculptures & furniture</p>
+        </a>
+        <a href="{% url 'hc_app:category_products' category_name='Textile' %}" class="category-card">
+            <h3>Textile</h3>
+            <p>Handwoven fabrics & clothing</p>
+        </a>
+        <a href="{% url 'hc_app:category_products' category_name='Pottery & Ceramics' %}" class="category-card">
+            <h3>Pottery & Ceramics</h3>
+            <p>Handmade vessels & decor</p>
+        </a>
+    </div>
+</section>
+
+<section id="featured">
+    <h2>Featured Crafts</h2>
+    <div class="featured-grid">
+        <div class="craft-card">
+            <div class="craft-image"></div>
+            <h3>Handwoven Bag</h3>
+            <p>by Maria Marlon - Iloilo</p>
+            <p class="price">₱3,500</p>
+        </div>
+    </div>
+</section>
+{% endblock %}

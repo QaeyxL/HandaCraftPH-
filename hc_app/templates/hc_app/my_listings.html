@@ -1,0 +1,26 @@
+{% extends 'hc_app/base.html' %}
+
+{% block content %}
+<h2>My Listings</h2>
+
+<div class="featured-grid">
+    {% for product in user_products %}
+    <div class="craft-card">
+        <div class="craft-image">
+            {% if product.image %}
+                <img src="{{ product.image.url }}" alt="{{ product.name }}">
+            {% endif %}
+        </div>
+        <h3>{{ product.name }}</h3>
+        <p>₱{{ product.price }}</p>
+
+        <form action="{% url 'hc_app:delete_product' product.id %}" method="POST" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="delete-btn">Delete</button>
+        </form>
+    </div>
+    {% empty %}
+    <p>You have no listings yet.</p>
+    {% endfor %}
+</div>
+{% endblock %}
