@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vendor Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/map.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/geodata/philippinesLow.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
+</head>
+
+<body>
+    <h1 class="role-vendor-dashboard"> Vendor Dashboard -- Shipping & Order Fulfillment</h1>
+    <div class="container">
+    <div class="div1">
+        <h2>Customers</h2>
+        <div class="stat-value">0</div>
+    </div>
+
+    <div class="div2">
+        <h2>Orders</h2>
+        <div class="stat-value">0</div>
+    </div>
+
+    <div class="div3">
+        <h2>Monthly Sales</h2>
+        <div class="chart-placeholder">Sync Graph later</div>
+    </div>
+
+    <div class="div4">
+        <h2>Monthly Target + Order Cap</h2>
+        <div class="chart-placeholder">[Target vs Actual]</div>
+    </div>
+
+    <div class="div5">
+        <h2>Customer Demographics</h2>
+        <div id="ph-map"></div>
+        <div id="ph-legend" class="map-legend" aria-hidden="false"></div>
+    </div>
+
+    <div class="div6">
+        <h2>Recent Orders</h2>
+        <ul>
+            <li>Order #0000 -- </li>
+            <li>Order #0000 -- </li>
+            <li>Order #0000 -- </li>
+        </ul>
+    </div>
+
+    <div class="div7">
+        <h2>Customer Inquiries</h2>
+        <div class="chat-container">
+            <div class="chat-list">
+                <div class="chat-user" data-user="1">Fn. Ln.</div>
+                <div class="chat-user" data-user="2">Fn. Ln.</div>
+                <div class="chat-user" data-user="3">Fn. Ln.</div>
+            </div>
+
+        <div class="chat-window hidden">
+          <div class="chat-header">
+            <span class="chat-username">Select a chat</span>
+          </div>
+        
+          <div class="messages">
+        <!-- Messages will appear here -->
+          </div>
+        
+          <div class="chat-input">
+            <input type="text" placeholder="Type a message...">
+            <button>Send</button>
+          </div>
+        </div>
+        </div>
+    </div>
+    </div>
+    <script src="scripts/dashboard.js"></script>
+</body>
+</html>
