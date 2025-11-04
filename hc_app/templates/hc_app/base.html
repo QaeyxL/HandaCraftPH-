@@ -33,6 +33,14 @@
             
                 <a href="{% url 'hc_app:register' %}">Sign Up</a>
                 <a href="{% url 'hc_app:login' %}">Login</a>
+
+                <li>
+                    <a href="{% url 'hc_app:cart_view' %}">
+                        🛒 Cart (<span id="cart-count">{{ request.user.cartitem_set.count }}</span>)
+                    </a>
+                </li>
+
+                
      
         </div>
     </header>
@@ -59,5 +67,32 @@
     </footer>
 
     {% block scripts %}{% endblock %}
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+        const forms = document.querySelectorAll(".add-to-cart-form");
+
+        forms.forEach(form => {
+            form.addEventListener("submit", function(e) {
+            e.preventDefault();
+            const productId = this.dataset.productId;
+            const csrfToken = this.querySelector("[name=csrfmiddlewaretoken]").value;
+
+            fetch(`/cart/add/${productId}/`, {
+                method: "POST",
+                headers: {
+                "X-CSRFToken": csrfToken,
+                "X-Requested-With": "XMLHttpRequest"
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("cart-count").textContent = data.count;
+            })
+            .catch(error => console.error("Error:", error));
+            });
+        });
+        });
+</script>
+
 </body>
 </html>

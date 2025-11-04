@@ -11,6 +11,7 @@ import requests
 from random import choice
 from .models import Product, Category, CartItem
 from django.shortcuts import get_object_or_404, render
+from django.http import JsonResponse
 
 #twilio whatsapp message code template
 def send_whatsapp_message(to_number, message_body):
@@ -179,7 +180,14 @@ def add_to_cart(request, product_id):
     if not created:
         cart_item.quantity += 1
         cart_item.save()
-    return redirect(request.META.get('HTTP_REFERER', 'hc_app:home'))
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':  # AJAX request
+        count = CartItem.objects.filter(user=request.user).count()
+        return JsonResponse({'count': count})
+
+    return redirect('hc_app:cart_view')
+
+    # return redirect(request.META.get('HTTP_REFERER', 'hc_app:home'))
 
 def category_products(request, category_name):
     products = Product.objects.filter(category__name=category_name)
@@ -215,3 +223,41 @@ def delete_product(request, product_id):
 def my_listings(request):
     products = Product.objects.filter(seller=request.user)
     return render(request, 'hc_app/my_listings.html', {'products': products})
+
+@login_required
+def cart_view(request):
+    cart_items = CartItem.objects.filter(user=request.user)
+
+    total = 0
+    for item in cart_items:
+        total += item.product.price * item.quantity   # ✅ compute total correctly
+
+    return render(request, 'hc_app/cart.html', {
+        'cart_items': cart_items,
+        'total': total
+    })
+
+@login_required
+def update_cart(request, item_id):
+    """Increase or decrease quantity of a cart item"""
+    cart_item = get_object_or_404(CartItem, id=item_id, user=request.user)
+
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'increase':
+            cart_item.quantity += 1
+            cart_item.save()
+        elif action == 'decrease':
+            # prevent quantity from going below 1
+            if cart_item.quantity > 1:
+                cart_item.quantity -= 1
+                cart_item.save()
+            else:
+                cart_item.delete()  # remove item if decreased from 1 to 0
+    return redirect('hc_app:cart_view')
+
+@login_required
+def remove_from_cart(request, item_id):
+    cart_item = get_object_or_404(CartItem, id=item_id, user=request.user)
+    cart_item.delete()
+    return redirect('hc_app:cart_view')
