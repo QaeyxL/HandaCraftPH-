@@ -14,6 +14,44 @@
 /* -----------------------------
    1) RESET / GLOBALS
    ----------------------------- */
+/* CSS theme palette */
+:root {
+  /* Core */
+  --color-text: #222;
+  --color-bg: #cad5e2;
+  --color-surface: #fff;
+
+  /* Brand / accents */
+  --brand-1: #d2ac6c;
+  --brand-2: #e4794b; /* accent */
+  --brand-3: #d16a3e; /* accent hover */
+  --primary: #904b1d;
+  --primary-dark: #73350b;
+
+  /* Supporting */
+  --price: #d00;
+  --sell-bg: #8fae9f;
+  --muted-green: #8fae94;
+
+  /* Neutrals */
+  --muted-100: #f9f9f9;
+  --muted-200: #f8f8f8;
+  --muted-300: #f3f3f3;
+
+  /* Borders */
+  --border-1: #ccc;
+  --border-2: #aaa;
+  --border-3: #999;
+  --divider: #ddd;
+
+  /* Typography shades */
+  --text-strong: #333;
+  --text-muted-1: #777;
+  --text-muted-2: #666;
+  --text-muted-3: #555;
+  --text-muted-4: #444;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
@@ -23,8 +61,20 @@
 
 body {
   color: #222;
-  background: #fff;
+  background: #cad5e2;
   line-height: 1.5;
+}
+html, body {
+  height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  color: #222;
+  background: #cad5e2; 
+  line-height: 1.5; 
 }
 
 a {
@@ -41,11 +91,13 @@ img {
    2) HEADER / NAVIGATION
    ----------------------------- */
 header {
+  color: var(--brand-1);
+  background-color: var(--muted-200);
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 15px 30px;
-  border-bottom: 1px solid #ccc;
+  border-bottom: 1px solid var(--border-1);
 }
 
 header .logo h1 {
@@ -200,25 +252,23 @@ nav ul {
    6) FOOTER
    ----------------------------- */
 footer {
-  border-top: 1px solid #ccc;
+  border-top: 1px solid var(--border-1);
   padding: 20px 30px;
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   font-size: 14px;
-  color: #444;
-}
-
-.footer-links {
-  display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
+  color: var(--color-surface);
+  background-color: var(--brand-1);
 }
 
 .footer-links a {
   font-size: 14px;
-  color: #333;
+  color: var(--color-surface);
+}
+.footer-links a:hover {
+  color: var(--muted-green);
 }
 
 /* -----------------------------
@@ -233,7 +283,7 @@ footer {
 .sell-container {
   max-width: 600px;
   width: 100%;
-  background: #fafafa;
+  background: #8fae9f;
   border: 1px solid #ccc;
   border-radius: 8px;
   padding: 30px;
@@ -350,7 +400,7 @@ footer {
   object-fit: cover;
 }
 
-delete-btn {
+.delete-btn {
   position: absolute;
   top: 5px;
   right: 5px;
