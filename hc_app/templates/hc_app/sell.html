@@ -11,11 +11,10 @@
 
     {% if success %}
     <div class="alert alert-success" style="color: green; margin-top: 10px;">
-      ✅ Your product has been uploaded successfully!
+      Your product has been uploaded successfully!
     </div>
     {% endif %}
 
-    <!-- Sell Product Form -->
     <form method="POST" enctype="multipart/form-data" id="sellForm">
       {% csrf_token %}
 
@@ -40,10 +39,11 @@
       </div>
 
       <div class="form-group">
-        <label for="id_image">Upload Product Images</label>
-        {{ form.image }}
+        <label for="images">Upload Product Images</label>
+        {{ image_form.images }}
         <div id="image-preview-container" style="display:flex; flex-wrap: wrap; gap:10px;"></div>
       </div>
+
 
       <div class="form-buttons">
         <button type="button" onclick="history.back()">Back</button>
@@ -51,15 +51,15 @@
       </div>
     </form>
 
-    <!-- Seller's Current Listings -->
     <h2 style="margin-top:50px;">My Listings</h2>
     <div class="featured-grid">
       {% for product in user_products %}
       <div class="craft-card">
         <div class="craft-image" style="height:200px; overflow:hidden;">
-          {% if product.image %}
-          <img src="{{ product.image.url }}" alt="{{ product.name }}" style="width:100%; height:100%; object-fit:cover;">
+          {% if product.images.all %}
+            <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" style="width:100%; height:100%; object-fit:cover;">
           {% endif %}
+
         </div>
         <h3>{{ product.name }}</h3>
         <p>₱{{ product.price }}</p>
@@ -79,8 +79,8 @@
 </section>
 
 <script>
-// Image preview logic
-const fileInput = document.getElementById('id_image');
+
+const fileInput = document.getElementById('id_images');
 const previewContainer = document.getElementById('image-preview-container');
 let filesArray = [];
 

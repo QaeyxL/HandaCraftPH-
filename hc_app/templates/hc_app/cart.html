@@ -20,7 +20,7 @@
     <tr>
       <td>{{ item.product.name }}</td>
       <td>
-        <!-- Decrease quantity -->
+
         <form action="{% url 'hc_app:update_cart' item.id %}" method="POST" style="display:inline;">
           {% csrf_token %}
           <input type="hidden" name="action" value="decrease">
@@ -29,7 +29,6 @@
 
         {{ item.quantity }}
 
-        <!-- Increase quantity -->
         <form action="{% url 'hc_app:update_cart' item.id %}" method="POST" style="display:inline;">
           {% csrf_token %}
           <input type="hidden" name="action" value="increase">
@@ -39,7 +38,6 @@
 
       <td>₱{{ item.product.price|floatformat:2 }}</td>
 
-      <!-- ✅ Corrected Total (price × quantity) -->
       <td>₱{{ item.product.price|mul:item.quantity|floatformat:2 }}</td>
 
       <td>
