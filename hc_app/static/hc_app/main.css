@@ -225,6 +225,25 @@ nav ul {
   padding: 15px;
 }
 
+.featured-grid .craft-card form {
+  width: 100%;
+  text-align: center;
+  margin-top: 10px;
+  position: static !important;
+}
+
+.featured-grid .craft-card form .delete-btn {
+  position: static !important;
+  display: inline-block !important;
+  background: red !important;
+  color: white !important;
+  border: none !important;
+  padding: 8px 12px !important;
+  border-radius: 5px !important;
+  margin-top: 10px !important;
+  cursor: pointer !important;
+}
+
 .craft-image {
   width: 100%;
   height: 120px;
@@ -400,7 +419,7 @@ footer {
   object-fit: cover;
 }
 
-.delete-btn {
+.preview-container .delete-btn {
   position: absolute;
   top: 5px;
   right: 5px;
@@ -415,7 +434,7 @@ footer {
   line-height: 18px;
 }
 
-.delete-btn:hover {
+.preview-container .delete-btn:hover {
   background-color: red;
 }
 

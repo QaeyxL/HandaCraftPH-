@@ -11,7 +11,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <body>
-    <!-- Header / Navbar -->
     <header>
         <div class="logo">
             <img src="{% static 'hc_app/images/logo.png' %}" alt="HandacraftPH Logo">
@@ -34,24 +33,19 @@
                 <a href="{% url 'hc_app:register' %}">Sign Up</a>
                 <a href="{% url 'hc_app:login' %}">Login</a>
 
-                <li>
-                    <a href="{% url 'hc_app:cart_view' %}">
-                        🛒 Cart (<span id="cart-count">{{ request.user.cartitem_set.count }}</span>)
-                    </a>
-                </li>
-
-                
-     
+                <a href="{% url 'hc_app:cart_view' %}">
+                    🛒 Cart (<span id="cart-count">{{ cart_count }}</span>)
+                </a>
         </div>
     </header>
 
-    <!-- Main Content -->
+
     <main>
         {% block content %}
         {% endblock %}
     </main>
 
-    <!-- Footer -->
+
     <footer>
         <div class="footer-logo">
             <h2>HandaCraftPH</h2>

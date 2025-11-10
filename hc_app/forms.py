@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
-from .models import Product, Category
+from .models import Product, Category, ProductImage
 
 
 class RegisterForm(forms.ModelForm):
@@ -26,7 +26,7 @@ class RegisterForm(forms.ModelForm):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['name', 'price', 'category', 'description', 'image', 'video']
+        fields = ['name', 'price', 'category', 'description']
     
     
     '''
@@ -36,8 +36,11 @@ class ProductForm(forms.ModelForm):
     Contact no: 1. cannot reuse previously registered contact no (no duplicates)
     '''
 
-    category = forms.ModelChoiceField(
-            queryset=Category.objects.all(),
-            empty_label="Select a Category",
-            widget=forms.Select(attrs={'class': 'form-control'})
-    )
+# class MultiFileInput(forms.ClearableFileInput):
+#     allow_multiple_selected = True
+
+# class ProductImageForm(forms.Form):
+#     images = forms.FileField(
+#         widget=MultiFileInput(attrs={'multiple': True}),
+#         required=True
+#     )

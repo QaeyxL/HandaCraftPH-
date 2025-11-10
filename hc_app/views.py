@@ -9,7 +9,7 @@ from twilio.rest import Client
 from .forms import RegisterForm, ProductForm
 import requests
 from random import choice
-from .models import Product, Category, CartItem
+from .models import Product, Category, CartItem, ProductImage
 from django.shortcuts import get_object_or_404, render
 from django.http import JsonResponse
 
@@ -124,15 +124,34 @@ def login_view(request):
 def home_view(request):
     return render(request, 'hc_app/home.html')
 
+@login_required
 def sell(request):
+    success = False
     if request.method == 'POST':
+        print(request.FILES)
         form = ProductForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            return render(request, 'hc_app/sell.html', {'form': ProductForm(), 'success': True})
+        images = request.FILES.getlist('images')
+
+        if form.is_valid() and images:
+            product = form.save(commit=False)
+            product.seller = request.user
+            product.save()
+
+            for image in request.FILES.getlist('images'):
+                ProductImage.objects.create(product=product, image=image)
+
+            success = True
+            form = ProductForm()
+
     else:
         form = ProductForm()
-    return render(request, 'hc_app/sell.html', {'form': form})
+
+    user_products = Product.objects.filter(seller=request.user)
+    return render(request,'hc_app/sell.html',
+        {'form': form, 
+         'success': success, 
+         'user_products': user_products}
+    )
 
 def catalog(request):
     products = Product.objects.all()
@@ -153,12 +172,15 @@ def edit_product(request, pk):
         form = ProductForm(instance=product)
     return render(request, 'hc_app/edit_product.html', {'form': form})
 
-def delete_product(request, pk):
-    product = Product.objects.get(id=pk)
+@login_required
+def delete_product(request, product_id):
+    product = get_object_or_404(Product, id=product_id, seller=request.user)
+    
     if request.method == 'POST':
         product.delete()
-        return redirect('catalog')
-    return render(request, 'hc_app/delete_confirm.html', {'product': product})
+        return redirect('hc_app:sell') 
+
+    return redirect('hc_app:sell')
 
 def category_view(request, category_id):
     category = get_object_or_404(Category, id=category_id)
@@ -190,23 +212,14 @@ def add_to_cart(request, product_id):
     # return redirect(request.META.get('HTTP_REFERER', 'hc_app:home'))
 
 def category_products(request, category_name):
-    products = Product.objects.filter(category__name=category_name)
-    return render(request, 'hc_app/category_products.html', {'products': products, 'category_name': category_name})
+    category = get_object_or_404(Category, name=category_name)
+    products = Product.objects.filter(category=category)
+    return render(
+        request,
+        'hc_app/category_products.html',
+        {'products': products, 'category': category}
+    )
 
-@login_required
-def sell(request):
-    success = False
-    if request.method == 'POST':
-        form = ProductForm(request.POST, request.FILES)
-        if form.is_valid():
-            product = form.save(commit=False)
-            product.seller = request.user  # set the logged-in user as seller
-            product.save()
-            success = True
-    else:
-        form = ProductForm()
-
-    return render(request, 'hc_app/sell.html', {'form': form, 'success': success})
 
 @login_required
 def delete_product(request, product_id):

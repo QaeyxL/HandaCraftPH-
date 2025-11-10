@@ -3,6 +3,8 @@ from . import views
 from django.contrib import admin
 from django.urls import path, include
 from django.http import HttpResponse
+from django.conf import settings
+from django.conf.urls.static import static
 
 app_name = 'hc_app'  # optional, useful for namespacing
 
@@ -26,3 +28,7 @@ urlpatterns = [
     path('my_listings/', views.my_listings, name='my_listings'),
 
 ]
+
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
