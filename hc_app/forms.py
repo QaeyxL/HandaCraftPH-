@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
-from .models import Product, Category, ProductImage
+from .models import Product, Category, ProductImage, UserProfile
 
 
 class RegisterForm(forms.ModelForm):
@@ -26,7 +26,7 @@ class RegisterForm(forms.ModelForm):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['name', 'price', 'category', 'description']
+        fields = ['name', 'price', 'category', 'description', 'weight', 'length', 'width', 'height']
     
     
     '''
@@ -44,3 +44,30 @@ class ProductForm(forms.ModelForm):
 #         widget=MultiFileInput(attrs={'multiple': True}),
 #         required=True
 #     )
+
+class CheckoutForm(forms.Form):
+    address_line1 = forms.CharField(label="Address Line 1", max_length=255)
+    city = forms.CharField(max_length=100)
+    state = forms.CharField(max_length=100)
+    postal_code = forms.CharField(max_length=20)
+    country = forms.CharField(max_length=50)
+
+class BuyerAddressForm(forms.ModelForm):
+    class Meta:
+        model = UserProfile
+        fields = ['contact_number', 'street', 'city', 'state', 'zip_code', 'country']
+        widgets = {
+            'contact_number': forms.TextInput(attrs={'placeholder': 'Enter your contact number', 'required': True}),
+            'street': forms.TextInput(attrs={'placeholder': 'Street address', 'required': True}),
+            'city': forms.TextInput(attrs={'placeholder': 'City', 'required': True}),
+            'state': forms.TextInput(attrs={'placeholder': 'State/Province', 'required': True}),
+            'zip_code': forms.TextInput(attrs={'placeholder': 'ZIP/Postal code', 'required': True}),
+            'country': forms.TextInput(attrs={'placeholder': 'Country', 'required': True}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make all fields required
+        for field in self.fields.values():
+            field.required = True
+            field.widget.attrs.update({'class': 'form-control', 'placeholder': field.label, 'required': True})

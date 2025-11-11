@@ -26,7 +26,14 @@ urlpatterns = [
     path('category/<str:category_name>/', views.category_products, name='category_products'),
     path('delete_product/<int:product_id>/', views.delete_product, name='delete_product'),
     path('my_listings/', views.my_listings, name='my_listings'),
-
+    path('dashboard/', views.dashboard_view, name='dashboard'),
+    path('checkout/', views.checkout_view, name='checkout'),
+    path('ajax/address-suggestions/', views.address_suggestions, name='address_suggestions'),
+    path('address-autocomplete/', views.address_autocomplete, name='address_autocomplete'),
+    path('place_order/', views.place_order, name='place_order'),
+    path('order-confirmation/', views.order_confirmation_view, name='order_confirmation'),
+    path('my-orders/', views.my_orders_view, name='orders'),
+    path('my-orders/delete/<int:order_id>/', views.delete_order, name='delete_order'),
 ]
 
 

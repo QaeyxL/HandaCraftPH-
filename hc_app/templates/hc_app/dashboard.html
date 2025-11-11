@@ -1,19 +1,15 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vendor Dashboard</title>
-    <link rel="stylesheet" href="dashboard.css">
-    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
-    <script src="https://cdn.amcharts.com/lib/5/map.js"></script>
-    <script src="https://cdn.amcharts.com/lib/5/geodata/philippinesLow.js"></script>
-    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
-</head>
+{% extends 'hc_app/base.html' %}
+{% load static %}
+{% block title %}Vendor Dashboard{% endblock %}
 
-<body>
-    <h1 class="role-vendor-dashboard"> Vendor Dashboard -- Shipping & Order Fulfillment</h1>
-    <div class="container">
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'hc_app/dashboard.css' %}">
+{% endblock %}
+
+{% block content %}
+<h1>Vendor Dashboard -- Shipping & Order Fulfillment</h1>
+
+<div class="container">
     <div class="div1">
         <h2>Customers</h2>
         <div class="stat-value">0</div>
@@ -58,23 +54,29 @@
                 <div class="chat-user" data-user="3">Fn. Ln.</div>
             </div>
 
-        <div class="chat-window hidden">
-          <div class="chat-header">
-            <span class="chat-username">Select a chat</span>
-          </div>
-        
-          <div class="messages">
-        <!-- Messages will appear here -->
-          </div>
-        
-          <div class="chat-input">
-            <input type="text" placeholder="Type a message...">
-            <button>Send</button>
-          </div>
-        </div>
+            <div class="chat-window hidden">
+                <div class="chat-header">
+                    <span class="chat-username">Select a chat</span>
+                </div>
+
+                <div class="messages">
+                    <!-- Messages will appear here -->
+                </div>
+
+                <div class="chat-input">
+                    <input type="text" placeholder="Type a message...">
+                    <button>Send</button>
+                </div>
+            </div>
         </div>
     </div>
-    </div>
-    <script src="scripts/dashboard.js"></script>
-</body>
-</html>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<!-- <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/map.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/geodata/philippinesLow.js"></script>
+<script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script> -->
+<script src="{% static 'hc_app/scripts/dashboard.js' %}"></script>
+{% endblock %}

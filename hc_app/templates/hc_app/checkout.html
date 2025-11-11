@@ -1,74 +1,188 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout</title>
-    <link rel="stylesheet" href="main.css">
-</head>
-<body class="checkout">
-    <div class="container">
-        <div class="header">
-            <div class="logo">
-                HandaCraftPH
-                <div class="tagline">Discover. Customize. Support Local</div>
-            </div>
-            <h1>Checkout</h1>
-        </div>
+{% extends 'hc_app/base.html' %}
+{% load static %}
+{% load mul_filters %}
 
+{% block title %}Checkout | HandacraftPH{% endblock %}
+
+{% block content %}
+<body class="checkout">
+<div class="container">
+    <div class="header">
+        <div class="logo">
+            HandaCraftPH
+            <div class="tagline">Discover. Customize. Support Local</div>
+        </div>
+        <h1>Checkout</h1>
+    </div>
+
+    <form id="checkout-form" method="POST" action="{% url 'hc_app:checkout' %}">
+        {% csrf_token %}
+
+        <!-- Buyer Delivery Address -->
         <div class="delivery-address">
             <div class="address-header">
-                <img src="location-icon.png" alt="Delivery Address Icon" class="address-icon">
+                <img src="{% static 'hc_app/images/location-icon.png' %}" alt="Delivery Address Icon" class="address-icon">
                 Delivery Address
             </div>
             <div class="address-details">
-                <div class="name">Juan Dela Cruz (+63) 9XX XXX XXXX</div>
-                <div class="address-line">
-                    <div class="address">70 Loyola Heights, Katipunan Ave, Quezon City, 1108 Metro Manila</div>
-                    <span class="change-address" onclick="changeAddress()">Change</span>
+                {{ form.non_field_errors }}
+                <div class="form-group" style="position: relative;">
+                    {{ form.street.label_tag }}<br>
+                    {{ form.street }}
+                    <div id="street-suggestions" class="autocomplete-dropdown"></div>
+                </div>
+                <div class="form-group">
+                    {{ form.city.label_tag }}<br>
+                    {{ form.city }}
+                </div>
+                <div class="form-group">
+                    {{ form.state.label_tag }}<br>
+                    {{ form.state }}
+                </div>
+                <div class="form-group">
+                    {{ form.zip_code.label_tag }}<br>
+                    {{ form.zip_code }}
+                </div>
+                <div class="form-group">
+                    {{ form.country.label_tag }}<br>
+                    {{ form.country }}
+                </div>
+                <div class="form-group">
+                    {{ form.contact_number.label_tag }}<br>
+                    {{ form.contact_number }}
                 </div>
             </div>
         </div>
 
+        <!-- Products -->
         <div class="products">
             <div class="products-header">
-                <img src="products-icon.png" alt="Products Icon" class="products-icon">
+                <img src="{% static 'hc_app/images/products-icon.png' %}" alt="Products Icon" class="products-icon">
                 Products
             </div>
             <div class="product-header-row">
-                <div class="product-header"></div> <!-- Empty for image/vendor column -->
+                <div class="product-header">Product</div>
                 <div class="unit-price-header">Unit Price</div>
                 <div class="quantity-header">Qty</div>
-                <div class="item-subtotal-header">Item Subtotal</div>
+                <div class="item-subtotal-header">Subtotal</div>
             </div>
+
             <div id="product-list">
-                <!-- Product items will be dynamically added here -->
+                {% if cart_items %}
+                    {% for item in cart_items %}
+                    <div class="product-item">
+                        <div class="product-details">
+                            <div class="product-name">{{ item.product.name }}</div>
+                            <div class="product-price">₱{{ item.product.price|floatformat:2 }}</div>
+                        </div>
+                        <div class="unit-price">₱{{ item.product.price|floatformat:2 }}</div>
+                        <div class="quantity">{{ item.quantity }}</div>
+                        <div class="item-subtotal">₱{{ item.product.price|mul:item.quantity|floatformat:2 }}</div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p>Your cart is empty.</p>
+                {% endif %}
             </div>
         </div>
 
+        <!-- Shipping -->
         <div class="shipping-option">
             <div class="shipping-header">
-                <img src="shipping-icon.png" alt="Shipping Icon" class="shipping-icon">
+                <img src="{% static 'hc_app/images/shipping-icon.png' %}" alt="Shipping Icon" class="shipping-icon">
                 Shipping Option
             </div>
             <div class="shipping-details">
-                Standard Local <span class="shipping-cost">Php 100.00</span>
+                Standard Local <span class="shipping-cost">₱100.00</span>
             </div>
         </div>
 
+        <div class="grand-total">
+            <h3>Grand Total: ₱{{ total_amount|floatformat:2 }}</h3>
+        </div>
+
+        <!-- Payment Method -->
         <div class="payment-method">
             <div class="payment-header">Payment Method</div>
             <div class="payment-options">
-                <button class="payment-button" onclick="selectPayment('Cash on Delivery')">Cash on Delivery</button>
-                <button class="payment-button" onclick="selectPayment('Credit / Debit Card')">Credit / Debit Card</button>
-                <button class="payment-button" onclick="selectPayment('GCash')">GCash</button>
-                <button class="payment-button" onclick="selectPayment('Maya')">Maya</button>
+                <button type="button" class="payment-button" onclick="selectPayment('Cash on Delivery')">Cash on Delivery</button>
+                <button type="button" class="payment-button" onclick="selectPayment('Credit / Debit Card')">Credit / Debit Card</button>
+                <button type="button" class="payment-button" onclick="selectPayment('GCash')">GCash</button>
+                <button type="button" class="payment-button" onclick="selectPayment('Maya')">Maya</button>
             </div>
         </div>
 
-        <button class="place-order" onclick="placeOrder()">Place Order</button>
-    </div>
-
-    <script src="checkout.js"></script>
+        <input type="hidden" name="payment_method" id="payment_method">
+        <button type="submit" class="place-order">Place Order</button>
+    </form>
+</div>
 </body>
-</html>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function selectPayment(method) {
+    document.getElementById("payment_method").value = method;
+    document.querySelectorAll(".payment-button").forEach(btn => btn.classList.remove("active"));
+    event.target.classList.add("active");
+}
+
+// EasyPost autocomplete
+let timeout = null;
+const streetInput = document.getElementById("id_street");
+const suggestionsDiv = document.getElementById("street-suggestions");
+
+streetInput.addEventListener("input", function() {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+        const query = streetInput.value;
+        if(query.length < 3) {
+            suggestionsDiv.innerHTML = "";
+            return;
+        }
+        fetch("{% url 'hc_app:address_autocomplete' %}?q=" + encodeURIComponent(query))
+        .then(response => response.json())
+        .then(data => {
+            suggestionsDiv.innerHTML = "";
+            data.forEach(addr => {
+                const div = document.createElement("div");
+                div.classList.add("suggestion-item");
+                div.textContent = addr.street + ", " + addr.city + ", " + addr.state + " " + addr.zip_code;
+                div.addEventListener("click", () => {
+                    streetInput.value = addr.street;
+                    document.getElementById("id_city").value = addr.city;
+                    document.getElementById("id_state").value = addr.state;
+                    document.getElementById("id_zip_code").value = addr.zip_code;
+                    document.getElementById("id_country").value = addr.country;
+                    suggestionsDiv.innerHTML = "";
+                });
+                suggestionsDiv.appendChild(div);
+            });
+        });
+    }, 300);
+});
+</script>
+
+<style>
+.autocomplete-dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    border: 1px solid #ccc;
+    background: #fff;
+    z-index: 10;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.suggestion-item {
+    padding: 5px 10px;
+    cursor: pointer;
+}
+
+.suggestion-item:hover {
+    background-color: #f0f0f0;
+}
+</style>
+{% endblock %}

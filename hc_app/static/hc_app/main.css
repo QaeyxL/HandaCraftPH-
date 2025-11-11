@@ -447,19 +447,17 @@ body.checkout {
   margin: 0;
   padding: 0;
   background-color: #f8f8f8;
-  min-height: 100vh;
-  overflow: hidden;
 }
 
 body.checkout .container {
   width: 100%;
-  height: 100vh;
   max-width: none;
   margin: 0;
   padding: 20px;
   background-color: #fff;
   box-sizing: border-box;
   overflow-y: auto;
+  min-height: 100vh;
 }
 
 body.checkout .header {
@@ -641,6 +639,13 @@ body.checkout .place-order {
 }
 
 body.checkout .place-order:hover { background-color: #d16a3e; cursor: pointer; }
+
+body.checkout .grand-total {
+    text-align: right;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-top: 20px;
+}
 
 /* -----------------------------
    9) UTILITIES / FORM HELPERS

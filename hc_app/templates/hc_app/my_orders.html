@@ -1,0 +1,38 @@
+{% extends 'hc_app/base.html' %}
+{% block content %}
+<h2>My Orders</h2>
+
+{% if orders %}
+    {% for order in orders %}
+        <div class="order-card">
+            <h3>Order #{{ order.id }} - Seller: {{ order.seller.username }}</h3>
+            <p>Status: {{ order.status }}</p>
+            <p>Placed on: {{ order.created_at|date:"M d, Y H:i" }}</p>
+            <p>Shipping Cost: ₱{{ order.shipping_cost }}</p>
+            <p>Total: ₱{{ order.total }}</p>
+
+            <h4>Items:</h4>
+            <ul>
+                {% for item in order.items.all %}
+                    <li>{{ item.product.name }} x {{ item.quantity }} - ₱{{ item.subtotal }}</li>
+                {% endfor %}
+            </ul>
+
+            {% if order.seller.userprofile %}
+            <p>Seller Address: {{ order.seller.userprofile.address_line1 }}, 
+               {{ order.seller.userprofile.city }}, {{ order.seller.userprofile.state }},
+               {{ order.seller.userprofile.postal_code }}, {{ order.seller.userprofile.country }}</p>
+            {% endif %}
+
+            <form method="POST" action="{% url 'hc_app:delete_order' order.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Delete</button>
+            </form>
+        </div>
+        <hr>
+    {% endfor %}
+{% else %}
+    <p>You have no orders yet.</p>
+{% endif %}
+
+{% endblock %}

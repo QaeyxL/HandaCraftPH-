@@ -1,0 +1,56 @@
+{% extends 'hc_app/base.html' %}
+{% load static %}
+
+{% block title %}Order Confirmation | HandacraftPH{% endblock %}
+
+{% block content %}
+<div class="confirmation-container">
+    <h1>🎉 Order Confirmation</h1>
+
+    {% if order %}
+        <p>Thank you for your purchase, {{ request.user.username }}!</p>
+        <p><strong>Order ID:</strong> {{ order.id }}</p>
+        <p><strong>Date:</strong> {{ order.created_at|date:"F j, Y, g:i a" }}</p>
+        <p><strong>Payment Method:</strong> {{ order.payment_method }}</p>
+        <p><strong>Total:</strong> ₱{{ order.total|floatformat:2 }}</p>
+        <hr>
+
+        <h3>Items in Your Order:</h3>
+        <ul>
+        {% for item in order_items %}
+            <li>{{ item.product.name }} — Qty: {{ item.quantity }} — ₱{{ item.subtotal|floatformat:2 }}</li>
+        {% endfor %}
+        </ul>
+
+        <hr>
+        <h4>Estimated Delivery: {{ order.estimated_delivery|default:"5-7 business days" }}</h4>
+
+        <a href="{% url 'hc_app:orders' %}" class="btn btn-primary">View My Orders</a>
+        <a href="{% url 'hc_app:home' %}" class="btn btn-secondary">Back to Home</a>
+
+    {% else %}
+        <p>{{ message }}</p>
+    {% endif %}
+</div>
+
+<style>
+.confirmation-container {
+    max-width: 700px;
+    margin: 50px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    margin: 10px 5px;
+    border-radius: 8px;
+    text-decoration: none;
+    color: white;
+}
+.btn-primary { background-color: #3498db; }
+.btn-secondary { background-color: #95a5a6; }
+</style>
+{% endblock %}

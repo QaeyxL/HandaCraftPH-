@@ -1,4 +1,4 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.core.mail import send_mail
@@ -6,12 +6,16 @@ from django.conf import settings
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from twilio.rest import Client
-from .forms import RegisterForm, ProductForm
+from .forms import RegisterForm, ProductForm, CheckoutForm, BuyerAddressForm
 import requests
 from random import choice
-from .models import Product, Category, CartItem, ProductImage
-from django.shortcuts import get_object_or_404, render
+from .models import Product, Category, CartItem, ProductImage, Order, OrderItem, UserProfile
+from django.shortcuts import get_object_or_404, render, redirect
 from django.http import JsonResponse
+from decimal import Decimal
+import easypost
+from datetime import datetime, timedelta
+from django.views.decorators.csrf import csrf_exempt
 
 #twilio whatsapp message code template
 def send_whatsapp_message(to_number, message_body):
@@ -274,3 +278,253 @@ def remove_from_cart(request, item_id):
     cart_item = get_object_or_404(CartItem, id=item_id, user=request.user)
     cart_item.delete()
     return redirect('hc_app:cart_view')
+
+
+easypost.api_key = settings.EASYPOST_API_KEY
+
+@login_required
+def checkout_view(request):
+    cart_items = CartItem.objects.filter(user=request.user)
+    seller_totals = {}
+    shipping_flat_rate = 100
+
+    for item in cart_items:
+        seller = item.product.seller
+        if seller.id not in seller_totals:
+            seller_totals[seller.id] = {
+                "seller": seller,
+                "items": [],
+                "subtotal": 0,
+                "shipping": shipping_flat_rate,
+                "estimated_delivery": datetime.now().date() + timedelta(days=5),
+            }
+        seller_totals[seller.id]["items"].append(item)
+        seller_totals[seller.id]["subtotal"] += item.product.price * item.quantity
+
+    total_amount = sum(data["subtotal"] + data["shipping"] for data in seller_totals.values())
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+
+    if request.method == "POST" and not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        form = BuyerAddressForm(request.POST, instance=profile)
+        payment_method = request.POST.get("payment_method", "Cash on Delivery")
+
+        if form.is_valid():
+            profile.save()
+            # Create orders per seller
+            for data in seller_totals.values():
+                order = Order.objects.create(
+                    buyer=request.user,
+                    seller=data["seller"],
+                    total=data["subtotal"] + data["shipping"],
+                    shipping_cost=data["shipping"],
+                    payment_method=payment_method,
+                    status="Pending"
+                )
+                for item in data["items"]:
+                    OrderItem.objects.create(
+                        order=order,
+                        product=item.product,
+                        quantity=item.quantity,
+                        subtotal=item.product.price * item.quantity
+                    )
+            cart_items.delete()
+            return redirect("hc_app:order_confirmation")
+        else:
+            messages.error(request, "Please fill out all required fields.")
+    else:
+        form = BuyerAddressForm(instance=profile)
+
+    return render(request, "hc_app/checkout.html", {
+        "cart_items": cart_items,
+        "seller_totals": seller_totals,
+        "total_amount": total_amount,
+        "form": form,
+    })
+
+@login_required
+@csrf_exempt
+def address_suggestions(request):
+    query = request.GET.get('q', '')
+    suggestions = []
+
+    if query:
+        try:
+            # EasyPost create with verify_strict=False returns suggested address corrections
+            results = easypost.Address.create(
+                verify_strict=False,
+                street1=query,
+                city='',
+                state='',
+                zip='',
+                country='US'
+            )
+            if hasattr(results, 'street1'):
+                suggestions.append({
+                    "street1": results.street1,
+                    "city": results.city,
+                    "state": results.state,
+                    "zip_code": results.zip,
+                    "country": results.country
+                })
+        except Exception as e:
+            print("EasyPost error:", e)
+
+    return JsonResponse({"suggestions": suggestions})
+
+@login_required
+def address_autocomplete(request):
+    query = request.GET.get("q", "")
+    if not query:
+        return JsonResponse([], safe=False)
+
+    try:
+        addresses = easypost.Address.create(
+            verify=["delivery"],
+            street1=query,
+            city="",
+            state="",
+            zip="",
+            country="US"  # or PH
+        )
+        # Easypost may return a single dict or a list
+        suggestions = []
+        for addr in addresses if isinstance(addresses, list) else [addresses]:
+            suggestions.append({
+                "street": addr.street1,
+                "city": addr.city,
+                "state": addr.state,
+                "zip_code": addr.zip,
+                "country": addr.country,
+            })
+        return JsonResponse(suggestions, safe=False)
+    except Exception as e:
+        return JsonResponse([], safe=False)
+
+@login_required
+def dashboard_view(request):
+    # For now, we’ll just pass dummy stats; you can replace these with real data later
+    context = {
+        "total_customers": 0,
+        "total_orders": 0,
+        "monthly_sales": [],
+        "recent_orders": [],
+        "user_products": request.user.products.all()  # Assuming Product model has related_name='products'
+    }
+    return render(request, "hc_app/dashboard.html")
+
+
+
+@login_required
+def place_order(request):
+    cart_items = CartItem.objects.filter(user=request.user)
+
+    if not cart_items.exists():
+        # Cart is empty
+        return redirect('hc_app:cart_view')
+
+    seller_orders = {}  # group by seller
+    shipping_flat_rate = 100  # flat rate per seller
+
+    # Group cart items by seller
+    for item in cart_items:
+        seller = item.product.seller
+        if seller.id not in seller_orders:
+            seller_orders[seller.id] = {
+                "seller": seller,
+                "items": [],
+                "total": 0,
+                "shipping_cost": shipping_flat_rate,
+                "seller_address": getattr(getattr(seller, 'userprofile', None), 'contact_number', 'No address'),
+            }
+
+        subtotal = item.product.price * item.quantity
+        seller_orders[seller.id]["items"].append({
+            "product": item.product,
+            "quantity": item.quantity,
+            "subtotal": subtotal,
+        })
+        seller_orders[seller.id]["total"] += subtotal
+
+    orders_list = []
+    grand_total = 0
+
+    for data in seller_orders.values():
+        order = Order.objects.create(
+            buyer=request.user,
+            seller=data["seller"],
+            total=data["total"],
+            shipping_cost=data["shipping_cost"],
+            payment_method="Mock Payment",
+            status="Pending"
+        )
+
+        # Save each item
+        for item in data["items"]:
+            OrderItem.objects.create(
+                order=order,
+                product=item["product"],
+                quantity=item["quantity"],
+                subtotal=item["subtotal"]
+            )
+
+        # Add estimated delivery (e.g., 5 days from now)
+        order.estimated_delivery = datetime.now().date() + timedelta(days=5)
+        order.seller_address = data["seller_address"]
+        orders_list.append(order)
+
+        grand_total += data["total"] + data["shipping_cost"]
+
+    # Clear the cart
+    cart_items.delete()
+
+    context = {
+        "orders": orders_list,
+        "grand_total": grand_total,
+    }
+
+    return render(request, "hc_app/order_confirmation.html", context)
+
+@login_required
+def my_orders_view(request):
+    # Get all orders for the current user (buyer)
+    orders = Order.objects.filter(buyer=request.user).order_by("-created_at")
+
+    return render(request, "hc_app/my_orders.html", {
+        "orders": orders
+    })
+
+@login_required
+def order_confirmation_view(request):
+    # Get the most recent order placed by the user
+    latest_order = (
+        request.user.orders.all()
+        .order_by("-created_at")
+        .prefetch_related("items")
+        .first()
+    )
+
+    if not latest_order:
+        return render(request, "hc_app/order_confirmation.html", {
+            "order": None,
+            "message": "No recent order found.",
+        })
+
+    return render(request, "hc_app/order_confirmation.html", {
+        "order": latest_order,
+        "order_items": latest_order.items.all(),
+    })
+
+@login_required
+def delete_order(request, order_id):
+    order = get_object_or_404(Order, id=order_id, buyer=request.user)
+    
+    if request.method == "POST":
+        if order.status in ["Pending", "Processing"]:
+            order.delete()
+            messages.success(request, "Order deleted successfully.")
+        else:
+            messages.error(request, "You can only delete pending or processing orders.")
+        return redirect('hc_app:orders')  # Redirect back to orders page
+
+    # If GET request, just redirect back
+    return redirect('hc_app:orders')
