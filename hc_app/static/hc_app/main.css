@@ -100,6 +100,20 @@ header {
   border-bottom: 1px solid var(--border-1);
 }
 
+/* Header logo layout and sizing */
+header .logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+header .logo img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  display: block;
+}
+
 header .logo h1 {
   font-size: 20px;
 }
