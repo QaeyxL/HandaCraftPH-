@@ -1,11 +1,3 @@
-### Developer Tasks
-- [ ] Configure loading images in checkout.html
-- [ ] With the sample Bag listing, make it be tagged under fashion\ currently only acting under an h3 tag with no id.  
-- [ ] Limit media upload in sell.html
-- [ ] Dashboard logic: Seller should be able to delete a listing if they want to; Limit so other users shouldn't be able to delete another user's listing 
-- [ ] Logic: input fields should be reset after submission in sell.html
-- [ ] Make add to cart and sell button locked only after an account has been logged in/registered. 
-
 # HandaCraftPH-Overview
 HandaCraftPH is designed as a culturally conscious marketplace system that supports MSMEs and traditional artisans through customizable workflows and role-based access.
 
