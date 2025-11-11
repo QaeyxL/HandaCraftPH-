@@ -1,1 +1,1 @@
-web: gunicorn handacraftph.wsgi
+web: gunicorn handacraftph.handacraftph.wsgi
