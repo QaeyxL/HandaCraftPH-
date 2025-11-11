@@ -18,7 +18,6 @@
     <form id="checkout-form" method="POST" action="{% url 'hc_app:checkout' %}">
         {% csrf_token %}
 
-        <!-- Buyer Delivery Address -->
         <div class="delivery-address">
             <div class="address-header">
                 <img src="{% static 'hc_app/images/location-icon.png' %}" alt="Delivery Address Icon" class="address-icon">
@@ -54,7 +53,6 @@
             </div>
         </div>
 
-        <!-- Products -->
         <div class="products">
             <div class="products-header">
                 <img src="{% static 'hc_app/images/products-icon.png' %}" alt="Products Icon" class="products-icon">
@@ -86,7 +84,6 @@
             </div>
         </div>
 
-        <!-- Shipping -->
         <div class="shipping-option">
             <div class="shipping-header">
                 <img src="{% static 'hc_app/images/shipping-icon.png' %}" alt="Shipping Icon" class="shipping-icon">
@@ -101,7 +98,6 @@
             <h3>Grand Total: ₱{{ total_amount|floatformat:2 }}</h3>
         </div>
 
-        <!-- Payment Method -->
         <div class="payment-method">
             <div class="payment-header">Payment Method</div>
             <div class="payment-options">
@@ -127,7 +123,6 @@ function selectPayment(method) {
     event.target.classList.add("active");
 }
 
-// EasyPost autocomplete
 let timeout = null;
 const streetInput = document.getElementById("id_street");
 const suggestionsDiv = document.getElementById("street-suggestions");

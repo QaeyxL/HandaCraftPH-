@@ -7,13 +7,11 @@ from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from twilio.rest import Client
 from .forms import RegisterForm, ProductForm, CheckoutForm, BuyerAddressForm
-import requests
+import requests, easypost
 from random import choice
 from .models import Product, Category, CartItem, ProductImage, Order, OrderItem, UserProfile
-from django.shortcuts import get_object_or_404, render, redirect
 from django.http import JsonResponse
 from decimal import Decimal
-import easypost
 from datetime import datetime, timedelta
 from django.views.decorators.csrf import csrf_exempt
 
@@ -193,7 +191,7 @@ def category_view(request, category_id):
 
 def home_view(request):
     categories = Category.objects.all()
-    products = Product.objects.all()  # for featured products
+    products = Product.objects.all()
     return render(request, 'hc_app/home.html', {
         'categories': categories,
         'products': products
@@ -207,13 +205,11 @@ def add_to_cart(request, product_id):
         cart_item.quantity += 1
         cart_item.save()
 
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':  # AJAX request
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':  
         count = CartItem.objects.filter(user=request.user).count()
         return JsonResponse({'count': count})
 
     return redirect('hc_app:cart_view')
-
-    # return redirect(request.META.get('HTTP_REFERER', 'hc_app:home'))
 
 def category_products(request, category_name):
     category = get_object_or_404(Category, name=category_name)
@@ -229,12 +225,11 @@ def category_products(request, category_name):
 def delete_product(request, product_id):
     product = get_object_or_404(Product, id=product_id)
     
-    # Only allow the seller who created the product to delete it
     if product.seller != request.user:
-        return redirect('hc_app:home')  # or show an error page
+        return redirect('hc_app:home') 
 
     product.delete()
-    return redirect('hc_app:sell')  # or redirect to seller's product list
+    return redirect('hc_app:sell') 
 
 @login_required
 def my_listings(request):
@@ -247,7 +242,7 @@ def cart_view(request):
 
     total = 0
     for item in cart_items:
-        total += item.product.price * item.quantity   # ✅ compute total correctly
+        total += item.product.price * item.quantity 
 
     return render(request, 'hc_app/cart.html', {
         'cart_items': cart_items,
@@ -265,12 +260,11 @@ def update_cart(request, item_id):
             cart_item.quantity += 1
             cart_item.save()
         elif action == 'decrease':
-            # prevent quantity from going below 1
             if cart_item.quantity > 1:
                 cart_item.quantity -= 1
                 cart_item.save()
             else:
-                cart_item.delete()  # remove item if decreased from 1 to 0
+                cart_item.delete() 
     return redirect('hc_app:cart_view')
 
 @login_required
@@ -310,7 +304,6 @@ def checkout_view(request):
 
         if form.is_valid():
             profile.save()
-            # Create orders per seller
             for data in seller_totals.values():
                 order = Order.objects.create(
                     buyer=request.user,
@@ -349,7 +342,6 @@ def address_suggestions(request):
 
     if query:
         try:
-            # EasyPost create with verify_strict=False returns suggested address corrections
             results = easypost.Address.create(
                 verify_strict=False,
                 street1=query,
@@ -384,9 +376,8 @@ def address_autocomplete(request):
             city="",
             state="",
             zip="",
-            country="US"  # or PH
+            country="PH" 
         )
-        # Easypost may return a single dict or a list
         suggestions = []
         for addr in addresses if isinstance(addresses, list) else [addresses]:
             suggestions.append({
@@ -402,13 +393,13 @@ def address_autocomplete(request):
 
 @login_required
 def dashboard_view(request):
-    # For now, we’ll just pass dummy stats; you can replace these with real data later
+    # dummy stats
     context = {
         "total_customers": 0,
         "total_orders": 0,
         "monthly_sales": [],
         "recent_orders": [],
-        "user_products": request.user.products.all()  # Assuming Product model has related_name='products'
+        "user_products": request.user.products.all()  
     }
     return render(request, "hc_app/dashboard.html")
 
@@ -419,13 +410,11 @@ def place_order(request):
     cart_items = CartItem.objects.filter(user=request.user)
 
     if not cart_items.exists():
-        # Cart is empty
         return redirect('hc_app:cart_view')
 
-    seller_orders = {}  # group by seller
-    shipping_flat_rate = 100  # flat rate per seller
+    seller_orders = {}  
+    shipping_flat_rate = 100  
 
-    # Group cart items by seller
     for item in cart_items:
         seller = item.product.seller
         if seller.id not in seller_orders:
@@ -467,14 +456,12 @@ def place_order(request):
                 subtotal=item["subtotal"]
             )
 
-        # Add estimated delivery (e.g., 5 days from now)
         order.estimated_delivery = datetime.now().date() + timedelta(days=5)
         order.seller_address = data["seller_address"]
         orders_list.append(order)
 
         grand_total += data["total"] + data["shipping_cost"]
 
-    # Clear the cart
     cart_items.delete()
 
     context = {
@@ -486,7 +473,6 @@ def place_order(request):
 
 @login_required
 def my_orders_view(request):
-    # Get all orders for the current user (buyer)
     orders = Order.objects.filter(buyer=request.user).order_by("-created_at")
 
     return render(request, "hc_app/my_orders.html", {
@@ -495,7 +481,6 @@ def my_orders_view(request):
 
 @login_required
 def order_confirmation_view(request):
-    # Get the most recent order placed by the user
     latest_order = (
         request.user.orders.all()
         .order_by("-created_at")
@@ -524,7 +509,5 @@ def delete_order(request, order_id):
             messages.success(request, "Order deleted successfully.")
         else:
             messages.error(request, "You can only delete pending or processing orders.")
-        return redirect('hc_app:orders')  # Redirect back to orders page
-
-    # If GET request, just redirect back
+        return redirect('hc_app:orders')  
     return redirect('hc_app:orders')
