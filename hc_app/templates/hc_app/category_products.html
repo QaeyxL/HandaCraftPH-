@@ -11,7 +11,7 @@
                 <div class="carousel-inner">
                     {% for img in product.images.all %}
                     <div class="carousel-item {% if forloop.first %}active{% endif %}">
-                        <img src="{{ img.image.url }}" class="d-block w-100" style="height: 200px; object-fit: cover;" alt="{{ product.name }}" loading="lazy">
+                        <img src="{{ img.image.url }}" class="d-block w-100" style="height: 200px; object-fit: cover;" alt="{{ product.name }}">
                     </div>
                     {% endfor %}
                 </div>
@@ -27,7 +27,7 @@
                 {% endif %}
             </div>
         {% else %}
-            <img src="{% static 'hc_app/images/default-product.png' %}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="Default Product" loading="lazy">
+            <img src="{% static 'hc_app/images/default-product.png' %}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="Default Product">
         {% endif %}
 
         <div class="card-body">
