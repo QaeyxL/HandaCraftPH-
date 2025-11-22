@@ -436,7 +436,7 @@ def dashboard_view(request):
         "user_products": Product.objects.filter(seller=request.user),   # edit22 - edited "user_products": request.user.products.all()
         "users": User.objects.exclude(id=request.user.id)   # edit22 - added
         }
-    return render(request, "hc_app/dashboard.html")
+    return render(request, "hc_app/dashboard.html", context)   # edit22 - add context
 
 
 
