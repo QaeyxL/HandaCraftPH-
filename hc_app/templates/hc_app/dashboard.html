@@ -12,12 +12,12 @@
 <div class="container">
     <div class="div1">
         <h2>Customers</h2>
-        <div class="stat-value">0</div>
+        <div class="stat-value">{{ total_customers }}</div>   <!-- edit22 - edit <div class="stat-value">0</div>-->
     </div>
 
     <div class="div2">
         <h2>Orders</h2>
-        <div class="stat-value">0</div>
+        <div class="stat-value">{{ total_orders }}</div>   <!-- edit22 - edit <div class="stat-value">0</div>-->
     </div>
 
     <div class="div3">
@@ -39,11 +39,25 @@
     <div class="div6">
         <h2>Recent Orders</h2>
         <ul>
-            <li>Order #0000 -- </li>
-            <li>Order #0000 -- </li>
-            <li>Order #0000 -- </li>
+            {% for order in recent_orders %}   <!-- edit22 - edited <li>Order #0000 -- </li>-->
+                <li>Order #{{ order.id }} — {{ order.status }}</li>
+            {% empty %}
+                <li>No recent orders</li>
+            {% endfor %}
         </ul>
     </div>
+
+    <div class="div8">
+        <h2>My Listings</h2>   <!-- edit22 - added -->
+        <ul>
+            {% for product in user_products %}
+                <a href="{% url 'hc_app:product_detail' product.id %}">{{ product.name }}</a>
+            {% empty %}
+                <li>No products listed yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
 
     <div class="div7">
         <h2>Customer Inquiries</h2>
@@ -67,7 +81,14 @@
                 </div>
 
                 <div class="messages">
-
+                    {% for q in recent_quotes %}   <!-- edit22 - added -->
+                        <div class="mb-2">
+                        <strong>{{ q.buyer.username }}</strong>: {{ q.message }}
+                        <small class="text-muted">({{ q.created_at|date:"Y-m-d H:i" }})</small>
+                        </div>
+                    {% empty %}
+                        <p>No quotes yet.</p>
+                    {% endfor %}
                 </div>
 
                 <div class="chat-input">

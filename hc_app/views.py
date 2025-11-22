@@ -9,6 +9,7 @@ from twilio.rest import Client
 from django.contrib.auth.models import User  # edit22 - added
 from .forms import RegisterForm, ProductForm, CheckoutForm, BuyerAddressForm
 import requests, easypost
+from .models import Quote  # edit22 - added
 from random import choice
 from .models import Product, Category, CartItem, ProductImage, Order, OrderItem, UserProfile
 from django.http import JsonResponse
@@ -427,14 +428,19 @@ def address_autocomplete(request):
 
 @login_required
 def dashboard_view(request):
+    user_products = Product.objects.filter(seller=request.user)   # edit22 - add (4)
+    recent_orders = Order.objects.filter(seller=request.user).order_by('-created_at')[:10]    
+    total_orders = Order.objects.filter(seller=request.user).count()
+    total_customers = Order.objects.filter(seller=request.user).values('buyer').distinct().count()
     # dummy stats
     context = {
-        "total_customers": 0,
-        "total_orders": 0,
+        "total_customers": total_customers,
+        "total_orders": total_orders,
         "monthly_sales": [],
-        "recent_orders": [],
-        "user_products": Product.objects.filter(seller=request.user),   # edit22 - edited "user_products": request.user.products.all()
-        "users": User.objects.exclude(id=request.user.id)   # edit22 - added
+        "recent_orders": recent_orders,
+        "user_products": user_products,   # edit22 - edited "user_products": request.user.products.all()
+        "users": User.objects.exclude(id=request.user.id),   # edit22 - added
+        "recent_quotes": Quote.objects.filter(seller=request.user).order_by("-created_at")[:20],  # edit22 - added
         }
     return render(request, "hc_app/dashboard.html", context)   # edit22 - add context
 
@@ -513,6 +519,30 @@ def my_orders_view(request):
     return render(request, "hc_app/my_orders.html", {
         "orders": orders
     })
+
+@login_required     # edit22 - added
+def send_quote(request, seller_id, product_id=None):
+    seller = get_object_or_404(User, id=seller_id)
+    product = Product.objects.filter(id=product_id).first() if product_id else None
+
+    if request.method == "POST":
+        msg = request.POST.get("message", "").strip()
+        if msg:
+            from .models import Quote
+            Quote.objects.create(
+                seller=seller,
+                buyer=request.user,
+                product=product,
+                message=msg
+            )
+            messages.success(request, "Quote sent successfully.")
+        else:
+            messages.error(request, "Message cannot be empty.")
+
+    # Redirect back to product detail if product_id was given
+    if product_id:
+        return redirect("hc_app:product_detail", pk=product_id)
+    return redirect("hc_app:home")
 
 @login_required
 def order_confirmation_view(request):
