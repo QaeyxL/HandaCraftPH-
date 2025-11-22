@@ -16,6 +16,7 @@ urlpatterns = [
     path('login/', views.login_view, name='login'),
     path('home/', views.home_view, name='home'),       # note trailing slash
     path('sell/', views.sell, name='sell'),
+    path("search/", views.search_view, name="search"),  # edit22 - added
     path('catalog/', views.catalog, name='catalog'),
     path('product/<int:pk>/', views.product_detail, name='product_detail'),
     path('product/<int:pk>/edit/', views.edit_product, name='edit_product'),

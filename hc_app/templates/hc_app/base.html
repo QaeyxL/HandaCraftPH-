@@ -53,7 +53,9 @@
         </nav>
 
         <div class="nav-actions">
-            <input type="text" placeholder="Search">
+            <form method="get" action="{% url 'hc_app:search' %}" class="d-inline">   <!-- edit22 - added -->
+                <input type="text" name="q" placeholder="Search" value="{{ request.GET.q }}">
+            </form>
             
                 <a href="{% url 'hc_app:register' %}">Sign Up</a>
                 <a href="{% url 'hc_app:login' %}">Login</a>

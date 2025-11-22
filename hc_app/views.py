@@ -576,3 +576,15 @@ def delete_order(request, order_id):
             messages.error(request, "You can only delete pending or processing orders.")
         return redirect('hc_app:orders')  
     return redirect('hc_app:orders')
+
+@login_required
+def search_view(request):   # edit22 - added
+    q = request.GET.get('q', '').strip()
+    results = Product.objects.none()
+    if q:
+        results = Product.objects.filter(name__icontains=q) | Product.objects.filter(description__icontains=q)
+    return render(request, 'hc_app/search_results.html', {
+        'query': q,
+        'results': results
+    })
+
