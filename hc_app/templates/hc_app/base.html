@@ -33,7 +33,20 @@
         <nav>
             <ul>
                 <li><a href="{% url 'hc_app:home' %}">Home</a></li>
-                <li><a href="#">Categories</a></li>
+                <li class="nav-item dropdown">    <!-- edit22 - edited <li><a href="#">Categories</a></li> -->
+                    <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Categories</a>
+                    <ul class="dropdown-menu">
+                        {% for category in categories %}
+                        <li>
+                            <a class="dropdown-item" href="{% url 'hc_app:category_products' category.name %}">
+                            {{ category.name }}
+                            </a>
+                        </li>
+                        {% endfor %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'hc_app:catalog' %}">View all products</a></li>
+                    </ul>
+                    </li>
                 <li><a href="#">Customize</a></li>
                 <li><a href="{% url 'hc_app:sell' %}">Sell</a></li>
             </ul>
@@ -65,6 +78,8 @@
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="{% url 'hc_app:orders' %}">My Orders</a></li>
                     <li><a class="dropdown-item" href="{% url 'hc_app:dashboard' %}">Dashboard</a></li>
+                    <li><a class="dropdown-item" href="{% url 'hc_app:password_change' %}">Change Password</a></li>   <!-- edit22 - added -->
+
                     
                    
                 </ul>

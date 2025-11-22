@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from twilio.rest import Client
+from django.contrib.auth.models import User  # edit22 - added
 from .forms import RegisterForm, ProductForm, CheckoutForm, BuyerAddressForm
 import requests, easypost
 from random import choice
@@ -14,6 +15,7 @@ from django.http import JsonResponse
 from decimal import Decimal
 from datetime import datetime, timedelta
 from django.views.decorators.csrf import csrf_exempt
+from decouple import config  # edit22 - added 
 
 #twilio whatsapp message code template
 def send_whatsapp_message(to_number, message_body):
@@ -27,6 +29,19 @@ def send_whatsapp_message(to_number, message_body):
         to=f'whatsapp:{to_number}',
         body=message_body
     )
+
+# edit22 - add
+@login_required  
+def message_user(request, user_id):
+    recipient_profile = get_object_or_404(UserProfile, user__id=user_id)
+    if request.method == "POST":
+        body = request.POST.get("message")
+        try:
+            send_whatsapp_message(recipient_profile.contact_number, body)
+            messages.success(request, f"Message sent to {recipient_profile.user.username}")
+        except Exception as e:
+            messages.error(request, f"Failed to send message: {e}")
+    return redirect("hc_app:dashboard")
 
 #Retrieve backup quotes when random quotes from API are unretrievable
 def get_random_quote():
@@ -155,9 +170,24 @@ def sell(request):
          'user_products': user_products}
     )
 
-def catalog(request):
+# edit22 - remove def catalog(request):
     products = Product.objects.all()
     return render(request, 'hc_app/catalog.html', {'products': products})
+
+def catalog(request):   # edit22 - edited
+    products = Product.objects.all()
+    category = request.GET.get("category")
+    if category:
+        products = products.filter(category__name=category)
+
+    # Provide categories to populate the filter dropdown
+    categories = Category.objects.all()
+
+    return render(request, 'hc_app/catalog.html', {
+        'products': products,
+        'categories': categories,
+        'active_category': category or ''
+    })
 
 def product_detail(request, pk):
     product = Product.objects.get(id=pk)
@@ -188,6 +218,10 @@ def category_view(request, category_id):
     category = get_object_or_404(Category, id=category_id)
     products = Product.objects.filter(category=category)
     return render(request, 'hc_app/category_products.html', {'category': category, 'products': products})
+
+def categories_list(request):   # edit22 - added
+    categories = Category.objects.all()
+    return render(request, "hc_app/categories.html", {"categories": categories})
 
 def home_view(request):
     categories = Category.objects.all()
@@ -399,8 +433,9 @@ def dashboard_view(request):
         "total_orders": 0,
         "monthly_sales": [],
         "recent_orders": [],
-        "user_products": request.user.products.all()  
-    }
+        "user_products": Product.objects.filter(seller=request.user),   # edit22 - edited "user_products": request.user.products.all()
+        "users": User.objects.exclude(id=request.user.id)   # edit22 - added
+        }
     return render(request, "hc_app/dashboard.html")
 
 

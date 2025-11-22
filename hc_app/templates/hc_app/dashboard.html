@@ -48,10 +48,17 @@
     <div class="div7">
         <h2>Customer Inquiries</h2>
         <div class="chat-container">
-            <div class="chat-list">
-                <div class="chat-user" data-user="1">Fn. Ln.</div>
-                <div class="chat-user" data-user="2">Fn. Ln.</div>
-                <div class="chat-user" data-user="3">Fn. Ln.</div>
+            <div class="chat-list">    
+                {% for user in users %}  <!-- edit22 - edited <div class="chat-user" data-user="1">Fn. Ln.</div> -->
+                    <div class="chat-user">
+                        <span>{{ user.username }}</span>
+                        <form method="post" action="{% url 'hc_app:message_user' user.id %}" class="d-flex gap-2 mt-1">
+                            {% csrf_token %}
+                            <input type="text" name="message" placeholder="Type a message..." class="form-control form-control-sm" required>
+                            <button type="submit" class="btn btn-sm btn-primary">Send</button>
+                        </form>
+                    </div>
+                {% endfor %}
             </div>
 
             <div class="chat-window hidden">
