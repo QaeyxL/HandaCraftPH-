@@ -37,10 +37,22 @@
     </div>
 
     <div class="div6">
-        <h2>Recent Orders</h2>
+        <h2>Recent Orders</h2>   <!-- edit22 - edited -->
         <ul>
-            {% for order in recent_orders %}   <!-- edit22 - edited <li>Order #0000 -- </li>-->
-                <li>Order #{{ order.id }} — {{ order.status }}</li>
+            {% for order in recent_orders %}
+                <li>
+                    Order #{{ order.id }} — {{ order.status }}
+
+                    <form method="post" action="{% url 'hc_app:update_order_status' order.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <select name="status" class="form-select form-select-sm d-inline w-auto">
+                            {% for s in "Pending,Processing,Shipped,Delivered,Cancelled".split(',') %}
+                                <option value="{{ s }}" {% if order.status == s %}selected{% endif %}>{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-outline-primary">Update</button>
+                    </form>
+                </li>
             {% empty %}
                 <li>No recent orders</li>
             {% endfor %}
@@ -51,7 +63,7 @@
         <h2>My Listings</h2>   <!-- edit22 - added -->
         <ul>
             {% for product in user_products %}
-                <a href="{% url 'hc_app:product_detail' product.id %}">{{ product.name }}</a>
+                </li></a>href="{% url 'hc_app:product_detail' product.id %}">{{ product.name }}</a>
             {% empty %}
                 <li>No products listed yet.</li>
             {% endfor %}

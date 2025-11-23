@@ -578,6 +578,19 @@ def delete_order(request, order_id):
     return redirect('hc_app:orders')
 
 @login_required
+def update_order_status(request, order_id):    # edit22 - added
+    order = get_object_or_404(Order, id=order_id, seller=request.user)
+    if request.method == "POST":
+        new_status = request.POST.get("status")
+        if new_status in ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"]:
+            order.status = new_status
+            order.save()
+            messages.success(request, "Order status updated.")
+        else:
+            messages.error(request, "Invalid status.")
+    return redirect("hc_app:dashboard")    # dashboard or orders?
+
+@login_required
 def search_view(request):   # edit22 - added
     q = request.GET.get('q', '').strip()
     results = Product.objects.none()

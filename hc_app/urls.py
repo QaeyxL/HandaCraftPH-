@@ -41,6 +41,7 @@ urlpatterns = [
     path('order-confirmation/', views.order_confirmation_view, name='order_confirmation'),
     path('my-orders/', views.my_orders_view, name='orders'),
     path('my-orders/delete/<int:order_id>/', views.delete_order, name='delete_order'),
+    path("orders/update-status/<int:order_id>/", views.update_order_status, name="update_order_status"),   # edit22 - added
     path("password_change/", auth_views.PasswordChangeView.as_view(template_name="hc_app/password_change.html", success_url=reverse_lazy("hc_app:password_change_done")), name="password_change"),  # edit22 - added
     path("password_change/done/", auth_views.PasswordChangeDoneView.as_view(template_name="hc_app/password_change_done.html"), name="password_change_done"),    # edit22 - added
 
