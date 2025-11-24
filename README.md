@@ -145,7 +145,7 @@ Used to fetch random quotes for enhancing the login and registration pages.
 
 ### Nominatim API
 API uses OpenStreetMap data. This is used to verify and/or suggest addresses to the user.
-[Nominatim API] (https://nominatim.org/release-docs/latest/)
+[Nominatim API](https://nominatim.org/release-docs/latest/)
 
 ## List of Implemented Features
 

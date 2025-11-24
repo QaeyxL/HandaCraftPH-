@@ -1005,64 +1005,67 @@ def admin_sales_api(request):
     start = request.GET.get('start_date')
     end = request.GET.get('end_date')
     cat = request.GET.get('category')
-    q = Order.objects.all()
-    # date filters
     try:
-        if start:
-            sd = datetime.strptime(start, '%Y-%m-%d')
-            q = q.filter(created_at__date__gte=sd.date())
-        if end:
-            ed = datetime.strptime(end, '%Y-%m-%d')
-            q = q.filter(created_at__date__lte=ed.date())
-    except Exception:
-        pass
+        q = Order.objects.all()
 
-    if cat:
+        # date filters
         try:
-            cid = int(cat)
-            q = q.filter(items__product__category__id=cid)
+            if start:
+                sd = datetime.strptime(start, '%Y-%m-%d')
+                q = q.filter(created_at__date__gte=sd.date())
+            if end:
+                ed = datetime.strptime(end, '%Y-%m-%d')
+                q = q.filter(created_at__date__lte=ed.date())
         except Exception:
-            # try slug/name
-            cq = Category.objects.filter(Q(slug__iexact=cat) | Q(name__iexact=cat)).first()
-            if cq:
-                q = q.filter(items__product__category=cq)
-
-    # total sales and orders
-    total_sales = q.aggregate(total=Sum('total')).get('total') or 0
-    total_orders = q.distinct().count()
-
-    # by category
-    by_cat_qs = OrderItem.objects.filter(order__in=q).values('product__category__id', 'product__category__name').annotate(total=Sum('subtotal')).order_by('-total')
-    by_category = []
-    for b in by_cat_qs:
-        by_category.append({'category_id': b['product__category__id'], 'category': b['product__category__name'], 'total': float(b['total'] or 0)})
-
-    # timeseries: monthly sums for selected range (or last 6 months by default)
-    timeseries = []
-    if start and end:
-        # build months between start and end
-        try:
-            sd = datetime.strptime(start, '%Y-%m-%d')
-            ed = datetime.strptime(end, '%Y-%m-%d')
-            cur = sd.replace(day=1)
-            while cur <= ed:
-                s = q.filter(created_at__year=cur.year, created_at__month=cur.month).aggregate(total=Sum('total'))
-                timeseries.append({'year': cur.year, 'month': cur.month, 'total': float(s.get('total') or 0)})
-                # advance month
-                nxt = cur + timedelta(days=32)
-                cur = nxt.replace(day=1)
-        except Exception:
+            # ignore parse errors and continue with unfiltered q
             pass
-    else:
-        now = timezone.now()
-        for i in range(5, -1, -1):
-            m_date = (now - timedelta(days=now.day-1)).replace(day=1) - timedelta(days=30*i)
-            yr = m_date.year
-            mo = m_date.month
-            s = q.filter(created_at__year=yr, created_at__month=mo).aggregate(total=Sum('total'))
-            timeseries.append({'year': yr, 'month': mo, 'total': float(s.get('total') or 0)})
 
-    return JsonResponse({'total_sales': float(total_sales), 'total_orders': total_orders, 'by_category': by_category, 'timeseries': timeseries})
+        # category filter: if provided, narrow to orders that have items in that category
+        if cat:
+            try:
+                cid = int(cat)
+                order_ids = OrderItem.objects.filter(product__category__id=cid).values_list('order_id', flat=True)
+                q = q.filter(id__in=order_ids)
+            except Exception:
+                cq = Category.objects.filter(Q(slug__iexact=cat) | Q(name__iexact=cat)).first()
+                if cq:
+                    order_ids = OrderItem.objects.filter(product__category=cq).values_list('order_id', flat=True)
+                    q = q.filter(id__in=order_ids)
+
+        # total sales and orders
+        total_sales = q.aggregate(total=Sum('total')).get('total') or 0
+        total_orders = q.distinct().count()
+
+        # by category (use OrderItem for accurate per-product subtotals)
+        by_cat_qs = OrderItem.objects.filter(order__in=q).values('product__category__id', 'product__category__name').annotate(total=Sum('subtotal')).order_by('-total')
+        by_category = [{'category_id': b['product__category__id'], 'category': b['product__category__name'], 'total': float(b['total'] or 0)} for b in by_cat_qs]
+
+        # timeseries: monthly sums for selected range (or last 6 months by default)
+        timeseries = []
+        if start and end:
+            try:
+                sd = datetime.strptime(start, '%Y-%m-%d')
+                ed = datetime.strptime(end, '%Y-%m-%d')
+                cur = sd.replace(day=1)
+                while cur <= ed:
+                    s = q.filter(created_at__year=cur.year, created_at__month=cur.month).aggregate(total=Sum('total'))
+                    timeseries.append({'year': cur.year, 'month': cur.month, 'total': float(s.get('total') or 0)})
+                    nxt = cur + timedelta(days=32)
+                    cur = nxt.replace(day=1)
+            except Exception:
+                pass
+        else:
+            now = timezone.now()
+            for i in range(5, -1, -1):
+                m_date = (now - timedelta(days=now.day-1)).replace(day=1) - timedelta(days=30*i)
+                yr = m_date.year
+                mo = m_date.month
+                s = q.filter(created_at__year=yr, created_at__month=mo).aggregate(total=Sum('total'))
+                timeseries.append({'year': yr, 'month': mo, 'total': float(s.get('total') or 0)})
+
+        return JsonResponse({'total_sales': float(total_sales), 'total_orders': total_orders, 'by_category': by_category, 'timeseries': timeseries, 'db_ok': True})
+    except (ProgrammingError, DatabaseError) as e:
+        return JsonResponse({'total_sales': 0.0, 'total_orders': 0, 'by_category': [], 'timeseries': [], 'db_ok': False, 'error': str(e)})
 
 
 def _create_demo_user(username, password, email='', is_staff=False, is_superuser=False):

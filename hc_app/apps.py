@@ -14,6 +14,7 @@ class HcAppConfig(AppConfig):
         try:
             from django.db.utils import OperationalError
             from .models import Category
+
             defaults = [
                 ("Fashion", "fashion"),
                 ("Needlework", "needlework"),
@@ -21,10 +22,13 @@ class HcAppConfig(AppConfig):
                 ("Textile", "textile"),
                 ("Pottery & Ceramics", "pottery-ceramics"),
             ]
+
             for name, slug in defaults:
                 try:
                     Category.objects.get_or_create(slug=slug, defaults={"name": name})
                 except Exception:
-                
+                    # If DB is not ready or another error occurs, skip this default
+                    # Keeps app startup resilient during migrations or early boot
+                    pass
         except Exception:
             pass
