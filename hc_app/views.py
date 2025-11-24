@@ -24,6 +24,7 @@ from django.views.decorators.csrf import csrf_exempt
 from decouple import config  # edit22 - added 
 from django.conf import settings
 from django.contrib.auth import get_user_model
+from django.http import Http404
 from django.contrib.auth import login as auth_login
 from django.db import DatabaseError
 from django.db.utils import ProgrammingError
@@ -439,10 +440,25 @@ def add_to_cart(request, product_id):
     return redirect('hc_app:cart_view')
 
 def category_products(request, category_name):
-    # Accept either slug or name for category lookup to be tolerant of URL format
+    # Accept either slug or name for category lookup to be tolerant of URL format.
+    # Be defensive if duplicate Category rows exist (same name) — prefer slug, otherwise
+    # pick the first matching Category to avoid MultipleObjectsReturned.
     category = Category.objects.filter(slug__iexact=category_name).first()
     if not category:
-        category = get_object_or_404(Category, name=category_name)
+        qs = Category.objects.filter(name__iexact=category_name).order_by('id')
+        if not qs.exists():
+            # no category found by slug or name
+            raise Http404("Category not found")
+        # if multiple categories share the same name, pick the one with the lowest id
+        category = qs.first()
+        # If the chosen category has a slug, redirect to the canonical slug URL to
+        # normalize links and avoid repeat lookups in the future.
+        if category.slug:
+            # Only redirect to canonical slug when configured to do so
+            from django.conf import settings
+            if getattr(settings, 'CANONICALIZE_CATEGORY_SLUGS', True):
+                return redirect('hc_app:category_products', category_name=category.slug)
+
     products = Product.objects.filter(category=category)
     return render(
         request,
