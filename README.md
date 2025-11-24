@@ -177,13 +177,13 @@ API uses OpenStreetMap data. This is used to verify and/or suggest addresses to 
   Products are filtered by their category. If a user wishes to search for a specific product, they can use the search bar and the links for the product will be shown to them. 
 
 - **Seller Dashboard**
-
+  The users has a dashboard page that shows the number of customers and orders of their products, monthly sales, customer demographics, order status update page, and listings.
 
 - **Checkout and Payment** 
   The user will enter their location credentials with the help of Nominatim API that can recommend them verified addresses. For orders that are from or to the United States of America, the EasyPost API will provide rates and is converted into PHP (Philippine Peso). For orders that are from or to any point in the Philippines, a flat rate of Php 100 is set.
 
 - **Messaging System**
-
+  The user will receive a message once their account has been made. The users can send messages to sellers through the dashboard page.
 
 
 ## 📸 Before/After Performance Screenshots
@@ -193,6 +193,10 @@ API uses OpenStreetMap data. This is used to verify and/or suggest addresses to 
 |<img width="240" src="https://github.com/user-attachments/assets/41bf28fe-7953-43fb-ac4a-7195c9234877" /> |<img src="https://github.com/user-attachments/assets/edbaeb8e-1dc7-4d48-b16d-4be3a2aaa2e1" width="220"/> | 
 | <img height="300" src="https://github.com/user-attachments/assets/46f4e80f-4e74-40bd-8270-50fff2866b90" />| <img width="300" src="https://github.com/user-attachments/assets/a6542454-c9cd-4e5a-92bb-f0f01ccc4ae7" />|
 |<img height="240" src="https://github.com/user-attachments/assets/13b80533-c937-4f66-ab28-896e7e8322e5" /> |<img width="300" src="https://github.com/user-attachments/assets/49179aa1-12f3-4a48-ba49-7fc8d4862983" />|
+
+## Recent Changes as of November 24, 2025:
+<img width="2559" height="1305" alt="image" src="https://github.com/user-attachments/assets/b0c0cd13-e86b-46fd-9caf-84087270ddb4" />  <img width="2339" height="1298" alt="image" src="https://github.com/user-attachments/assets/32e83349-660f-4aba-bace-793036778367" />
+<img width="2328" height="1304" alt="image" src="https://github.com/user-attachments/assets/e1363097-939a-4ccd-80c4-86ceaae615be" />
 
 ## 🐞 Known Issues & Limitations
 - **No payment gateway integration**  
