@@ -4,8 +4,265 @@
 
 {% block title %}Checkout | HandacraftPH{% endblock %}
 
+{# Set the body class so CSS can be scoped properly #}
+{% block body_class %}checkout{% endblock %}
+
+{% block extra_css %}
+<style>
+/* -----------------------------
+   CHECKOUT PAGE CSS (scoped to body.checkout)
+   ----------------------------- */
+body.checkout {
+  font-family: sans-serif; 
+  margin: 0;
+  padding: 0;
+  background-color: #f8f8f8;
+}
+
+/* Container */
+body.checkout .container {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 20px;
+  background-color: #fff;
+  box-sizing: border-box;
+  overflow-y: auto;
+  min-height: 100vh;
+}
+
+/* Header */
+body.checkout .header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+body.checkout .logo {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+}
+body.checkout .tagline {
+  font-size: 10px;
+  color: #777;
+}
+body.checkout h1 {
+  font-size: 24px;
+  color: #333;
+  margin: 0;
+}
+
+/* Sections */
+body.checkout .delivery-address,
+body.checkout .products,
+body.checkout .shipping-option,
+body.checkout .payment-method {
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 15px;
+  box-sizing: border-box;
+}
+
+body.checkout .address-header,
+body.checkout .products-header,
+body.checkout .shipping-header,
+body.checkout .payment-header {
+  font-weight: bold;
+  color: #555;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+}
+body.checkout .address-icon,
+body.checkout .products-icon,
+body.checkout .shipping-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 5px;
+}
+
+/* Products */
+body.checkout .product-header-row {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  color: #555;
+  padding: 5px 0;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 5px;
+}
+body.checkout .product-header { width: 40%; text-align: left; }
+body.checkout .unit-price-header { width: 20%; text-align: right; }
+body.checkout .quantity-header { width: 15%; text-align: center; }
+body.checkout .item-subtotal-header { width: 25%; text-align: right; }
+
+body.checkout .product-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+  box-sizing: border-box;
+}
+body.checkout .product-item:last-child { border-bottom: none; }
+
+body.checkout .product-details { flex-grow: 1; width: 40%; }
+body.checkout .product-name { font-weight: bold; color: #444; }
+body.checkout .product-price { color: #777; }
+
+body.checkout .unit-price,
+body.checkout .quantity,
+body.checkout .item-subtotal { width: 20%; text-align: right; color: #555; }
+body.checkout .quantity { text-align: center; }
+
+/* Shipping */
+body.checkout .shipping-details { 
+  display: flex; 
+  justify-content: space-between; 
+  color: #666; 
+  box-sizing: border-box;
+  margin-bottom: 10px;
+  padding: 5px 0;
+  border-bottom: 1px solid #eee;
+}
+body.checkout .shipping-details:last-child {
+  border-bottom: none;
+}
+body.checkout .shipping-cost { 
+  font-weight: bold;
+  transition: all 0.3s ease;
+}
+body.checkout .seller-name {
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+
+body.checkout .shipping-loading {
+  color: #4CAF50;
+  font-style: italic;
+  font-size: 13px;
+}
+
+/* Payment buttons */
+body.checkout .payment-options { display: flex; flex-wrap: wrap; gap: 8px; }
+body.checkout .payment-button {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #f9f9f9;
+  color: #555;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+body.checkout .payment-button.active {
+  background-color: #e4794b;
+  color: #fff;
+  border-color: #e4794b;
+}
+
+/* Buttons */
+body.checkout .calculate-shipping {
+  background-color: #4CAF50;
+  color: #fff;
+  border: none;
+  border-radius: 15px;
+  padding: 10px 18px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  box-sizing: border-box;
+  margin-right: 10px;
+}
+body.checkout .calculate-shipping:hover { background-color: #45a049; }
+
+body.checkout .place-order {
+  background-color: #e4794b;
+  color: #fff;
+  border: none;
+  border-radius: 15px;
+  padding: 12px 20px;
+  font-size: 18px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  box-sizing: border-box;
+}
+body.checkout .place-order:hover { background-color: #d16a3e; }
+
+body.checkout .button-container {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* Grand Total */
+body.checkout .grand-total {
+    text-align: right;
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin-top: 20px;
+}
+
+/* Messages */
+body.checkout .messages {
+  margin: 10px 0;
+}
+body.checkout .messages p {
+  padding: 10px;
+  border-radius: 5px;
+  margin: 5px 0;
+}
+body.checkout .messages p.success {
+  background-color: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+body.checkout .messages p.error {
+  background-color: #f8d7da;
+  color: #721c24;
+  border: 1px solid #f5c6cb;
+}
+
+/* Autocomplete */
+body.checkout .autocomplete-dropdown {
+    position: absolute;
+    background-color: #fff !important;
+    border: 1px solid #fff;
+    border-radius: 8px;
+    max-height: 250px;
+    overflow-y: auto;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-size: 14px;
+    padding: 5px 0;
+}
+body.checkout .autocomplete-dropdown .suggestion-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    margin: 3px 5px;
+    color: #333 !important;
+    background-color: #fff !important;
+}
+body.checkout .autocomplete-dropdown .suggestion-item:hover {
+    background-color: #e4794b !important;
+    color: #fff !important;
+    transform: translateX(2px);
+}
+body.checkout #id_street.verified { border: 2px solid #4CAF50; }
+body.checkout #id_street.unverified { border: 2px solid #f44336; }
+</style>
+{% endblock %}
+
 {% block content %}
-<body class="checkout">
 <div class="container">
     <div class="header">
         <div class="logo">
@@ -14,10 +271,21 @@
         </div>
         <h1>Checkout</h1>
     </div>
+    
+    <div id="messages-container">
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <p class="{{ message.tags }}">{{ message }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
 
     <form id="checkout-form" method="POST" action="{% url 'hc_app:checkout' %}">
         {% csrf_token %}
 
+        <!-- Delivery Address -->
         <div class="delivery-address">
             <div class="address-header">
                 <img src="{% static 'hc_app/images/location-icon.png' %}" alt="Delivery Address Icon" class="address-icon">
@@ -30,29 +298,15 @@
                     {{ form.street }}
                     <div id="street-suggestions" class="autocomplete-dropdown"></div>
                 </div>
-                <div class="form-group">
-                    {{ form.city.label_tag }}<br>
-                    {{ form.city }}
-                </div>
-                <div class="form-group">
-                    {{ form.state.label_tag }}<br>
-                    {{ form.state }}
-                </div>
-                <div class="form-group">
-                    {{ form.zip_code.label_tag }}<br>
-                    {{ form.zip_code }}
-                </div>
-                <div class="form-group">
-                    {{ form.country.label_tag }}<br>
-                    {{ form.country }}
-                </div>
-                <div class="form-group">
-                    {{ form.contact_number.label_tag }}<br>
-                    {{ form.contact_number }}
-                </div>
+                <div class="form-group">{{ form.city.label_tag }}<br>{{ form.city }}</div>
+                <div class="form-group">{{ form.state.label_tag }}<br>{{ form.state }}</div>
+                <div class="form-group">{{ form.zip_code.label_tag }}<br>{{ form.zip_code }}</div>
+                <div class="form-group">{{ form.country.label_tag }}<br>{{ form.country }}</div>
+                <div class="form-group">{{ form.contact_number.label_tag }}<br>{{ form.contact_number }}</div>
             </div>
         </div>
 
+        <!-- Products -->
         <div class="products">
             <div class="products-header">
                 <img src="{% static 'hc_app/images/products-icon.png' %}" alt="Products Icon" class="products-icon">
@@ -84,48 +338,70 @@
             </div>
         </div>
 
+        <!-- Shipping -->
         <div class="shipping-option">
             <div class="shipping-header">
                 <img src="{% static 'hc_app/images/shipping-icon.png' %}" alt="Shipping Icon" class="shipping-icon">
-                Shipping Option
+                Shipping Options
+                <span id="shipping-status" class="shipping-loading" style="margin-left: 10px; display: none;"></span>
             </div>
-            <div class="shipping-details">
-                Standard Local <span class="shipping-cost">₱100.00</span>
+            <div id="shipping-container">
+                {% for seller_id, data in seller_totals.items %}
+                    <div class="seller-shipping-group" data-seller-id="{{ seller_id }}">
+                        <div class="seller-name">Seller: {{ data.seller.username }}</div>
+                        <div class="shipping-details">
+                            <span>Standard Shipping</span>
+                            <span class="shipping-cost" data-shipping-cost="{{ seller_id }}">₱{{ data.shipping|floatformat:2 }}</span>
+                        </div>
+                    </div>
+                {% endfor %}
             </div>
         </div>
 
+        <!-- Grand Total -->
         <div class="grand-total">
-            <h3>Grand Total: ₱{{ total_amount|floatformat:2 }}</h3>
+            <h3 id="grand-total-display">Grand Total: ₱{{ total_amount|floatformat:2 }}</h3>
         </div>
 
+        <!-- Payment -->
         <div class="payment-method">
             <div class="payment-header">Payment Method</div>
             <div class="payment-options">
-                <button type="button" class="payment-button" onclick="selectPayment('Cash on Delivery')">Cash on Delivery</button>
-                <button type="button" class="payment-button" onclick="selectPayment('Credit / Debit Card')">Credit / Debit Card</button>
-                <button type="button" class="payment-button" onclick="selectPayment('GCash')">GCash</button>
-                <button type="button" class="payment-button" onclick="selectPayment('Maya')">Maya</button>
+                <button type="button" class="payment-button" onclick="selectPayment(event, 'Cash on Delivery')">Cash on Delivery</button>
+                <button type="button" class="payment-button" onclick="selectPayment(event, 'Credit / Debit Card')">Credit / Debit Card</button>
+                <button type="button" class="payment-button" onclick="selectPayment(event, 'GCash')">GCash</button>
+                <button type="button" class="payment-button" onclick="selectPayment(event, 'Maya')">Maya</button>
             </div>
         </div>
 
         <input type="hidden" name="payment_method" id="payment_method">
-        <button type="submit" class="place-order">Place Order</button>
+        
+        <div class="button-container">
+            <button type="button" id="calculate-shipping-btn" class="calculate-shipping">Recalculate Shipping</button>
+            <button type="submit" name="place_order" id="place-order-btn" class="place-order">Place Order</button>
+        </div>
     </form>
 </div>
-</body>
 {% endblock %}
 
 {% block scripts %}
 <script>
-function selectPayment(method) {
-    document.getElementById("payment_method").value = method;
-    document.querySelectorAll(".payment-button").forEach(btn => btn.classList.remove("active"));
-    event.target.classList.add("active");
-}
-
 let timeout = null;
+let shippingCalculated = false;
+
+// Street autocomplete
 const streetInput = document.getElementById("id_street");
 const suggestionsDiv = document.getElementById("street-suggestions");
+const countryInput = document.getElementById("id_country");
+const cityInput = document.getElementById("id_city");
+const stateInput = document.getElementById("id_state");
+const zipInput = document.getElementById("id_zip_code");
+
+// Auto-calculate shipping on page load if USA address exists
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("Page loaded, checking if auto-calculation needed...");
+    autoCalculateShippingIfNeeded();
+});
 
 streetInput.addEventListener("input", function() {
     clearTimeout(timeout);
@@ -133,12 +409,18 @@ streetInput.addEventListener("input", function() {
         const query = streetInput.value;
         if(query.length < 3) {
             suggestionsDiv.innerHTML = "";
+            streetInput.classList.remove("verified", "unverified");
             return;
         }
+
         fetch("{% url 'hc_app:address_autocomplete' %}?q=" + encodeURIComponent(query))
         .then(response => response.json())
         .then(data => {
             suggestionsDiv.innerHTML = "";
+            if(data.length === 0){
+                streetInput.classList.remove("verified");
+                streetInput.classList.add("unverified");
+            }
             data.forEach(addr => {
                 const div = document.createElement("div");
                 div.classList.add("suggestion-item");
@@ -150,34 +432,231 @@ streetInput.addEventListener("input", function() {
                     document.getElementById("id_zip_code").value = addr.zip_code;
                     document.getElementById("id_country").value = addr.country;
                     suggestionsDiv.innerHTML = "";
+                    streetInput.classList.remove("unverified");
+                    streetInput.classList.add("verified");
+                    
+                    // Auto-calculate shipping when address is selected
+                    autoCalculateShippingIfNeeded();
                 });
                 suggestionsDiv.appendChild(div);
             });
         });
     }, 300);
 });
+
+// Auto-calculate shipping when address fields are filled
+function autoCalculateShippingIfNeeded() {
+    clearTimeout(timeout);
+    timeout = setTimeout(() => {
+        const country = countryInput.value.trim().toLowerCase();
+        const isUSA = country.includes('united states') || country === 'usa' || country === 'us';
+        const isPhilippines = country.includes('philippines') || country === 'ph';
+        
+        // Check required fields based on country
+        let allFieldsFilled;
+        if (isUSA) {
+            // USA requires all fields including state and zip
+            allFieldsFilled = streetInput.value.trim() && 
+                            cityInput.value.trim() && 
+                            stateInput.value.trim() && 
+                            zipInput.value.trim() && 
+                            countryInput.value.trim();
+        } else if (isPhilippines) {
+            // Philippines only requires street, city, and country
+            allFieldsFilled = streetInput.value.trim() && 
+                            cityInput.value.trim() && 
+                            countryInput.value.trim();
+        } else {
+            // Other countries require all fields
+            allFieldsFilled = streetInput.value.trim() && 
+                            cityInput.value.trim() && 
+                            countryInput.value.trim();
+        }
+        
+        console.log("Auto-calc check:", {
+            country: country,
+            isUSA: isUSA,
+            isPhilippines: isPhilippines,
+            allFieldsFilled: allFieldsFilled,
+            shippingCalculated: shippingCalculated
+        });
+        
+        // Auto-calculate for both USA and Philippines
+        if (allFieldsFilled && (isUSA || isPhilippines) && !shippingCalculated) {
+            if (isUSA) {
+                console.log("✓ USA address detected, calculating EasyPost rates...");
+            } else if (isPhilippines) {
+                console.log("✓ Philippines address detected, applying flat rate...");
+            }
+            calculateShipping();
+        }
+    }, 300);
+}
+
+// Add listeners to all address fields for auto-calculation
+[streetInput, cityInput, stateInput, zipInput, countryInput].forEach(input => {
+    if (input) {
+        input.addEventListener('change', function() {
+            shippingCalculated = false; // Reset flag when address changes
+            autoCalculateShippingIfNeeded();
+        });
+        input.addEventListener('blur', function() {
+            shippingCalculated = false; // Reset flag when leaving field
+            autoCalculateShippingIfNeeded();
+        });
+    }
+});
+
+// Payment selection
+function selectPayment(event, method) {
+    document.getElementById("payment_method").value = method;
+    document.querySelectorAll(".payment-button").forEach(btn => btn.classList.remove("active"));
+    event.target.classList.add("active");
+}
+
+// Calculate shipping via AJAX
+const calculateBtn = document.getElementById("calculate-shipping-btn");
+if (calculateBtn) {
+    calculateBtn.addEventListener("click", function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log("Recalculate button clicked!");
+        shippingCalculated = false; // Reset flag to allow recalculation
+        calculateShipping();
+    });
+}
+
+function calculateShipping() {
+    console.log("=== Starting shipping calculation ===");
+    
+    const form = document.getElementById("checkout-form");
+    const formData = new FormData(form);
+    formData.append("calculate_shipping", "true");
+    
+    // Log form data
+    for (let pair of formData.entries()) {
+        console.log(pair[0] + ': ' + pair[1]);
+    }
+    
+    const shippingStatus = document.getElementById("shipping-status");
+    shippingStatus.textContent = "Calculating...";
+    shippingStatus.style.display = "inline";
+    
+    fetch("{% url 'hc_app:checkout' %}", {
+        method: "POST",
+        body: formData,
+        headers: {
+            "X-Requested-With": "XMLHttpRequest"
+        }
+    })
+    .then(response => {
+        console.log("Response status:", response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.text();
+    })
+    .then(text => {
+        console.log("=== Raw response received ===");
+        console.log(text.substring(0, 200) + "..."); // Log first 200 chars
+        shippingStatus.style.display = "none";
+        
+        let data;
+        try {
+            data = JSON.parse(text);
+            console.log("=== Parsed JSON ===");
+            console.log(data);
+        } catch (e) {
+            console.error("JSON parse error:", e);
+            console.error("Response was:", text.substring(0, 500));
+            showMessage("Error: Invalid server response", "error");
+            return;
+        }
+        
+        if (data.success) {
+            console.log("=== Success! Updating UI ===");
+            
+            // Update shipping costs for each seller
+            if (data.seller_totals && Array.isArray(data.seller_totals)) {
+                console.log(`Found ${data.seller_totals.length} sellers to update`);
+                
+                data.seller_totals.forEach(seller => {
+                    console.log(`\nProcessing seller ID: "${seller.id}"`);
+                    console.log(`Shipping cost: "${seller.shipping}"`);
+                    
+                    // Find the shipping cost element for this seller
+                    const selector = `[data-shipping-cost="${seller.id}"]`;
+                    console.log(`Looking for element with selector: ${selector}`);
+                    
+                    const costSpan = document.querySelector(selector);
+                    console.log("Found element:", costSpan);
+                    
+                    if (costSpan) {
+                        const oldValue = costSpan.textContent;
+                        const newCost = parseFloat(seller.shipping).toFixed(2);
+                        costSpan.textContent = "₱" + newCost;
+                        console.log(`✓ Updated from ${oldValue} to ₱${newCost}`);
+                        
+                        // Add visual feedback
+                        costSpan.style.backgroundColor = '#4CAF50';
+                        costSpan.style.color = 'white';
+                        costSpan.style.padding = '2px 5px';
+                        costSpan.style.borderRadius = '3px';
+                        setTimeout(() => {
+                            costSpan.style.backgroundColor = '';
+                            costSpan.style.color = '';
+                            costSpan.style.padding = '';
+                            costSpan.style.borderRadius = '';
+                        }, 1000);
+                    } else {
+                        console.warn(`✗ Could not find element for seller ${seller.id}`);
+                        console.log("Available elements with data-shipping-cost:");
+                        document.querySelectorAll('[data-shipping-cost]').forEach(el => {
+                            console.log(`  - data-shipping-cost="${el.getAttribute('data-shipping-cost')}"`);
+                        });
+                    }
+                });
+            } else {
+                console.error("seller_totals not found or not an array:", data.seller_totals);
+            }
+            
+            // Update grand total
+            if (data.total_amount) {
+                const grandTotal = parseFloat(data.total_amount).toFixed(2);
+                const grandTotalEl = document.getElementById("grand-total-display");
+                if (grandTotalEl) {
+                    grandTotalEl.textContent = "Grand Total: ₱" + grandTotal;
+                    console.log("✓ Updated grand total to ₱" + grandTotal);
+                }
+            }
+            
+            shippingCalculated = true;
+            showMessage("✓ Shipping rates updated!", "success");
+            console.log("=== Update complete ===");
+        } else {
+            console.error("Request failed:", data.error);
+            showMessage(data.error || "Failed to calculate shipping", "error");
+        }
+    })
+    .catch(error => {
+        shippingStatus.style.display = "none";
+        showMessage("Network error calculating shipping", "error");
+        console.error("=== Fetch error ===", error);
+    });
+}
+
+function showMessage(text, type) {
+    const messagesContainer = document.getElementById("messages-container");
+    const messageDiv = document.createElement("div");
+    messageDiv.className = "messages";
+    messageDiv.innerHTML = `<p class="${type}">${text}</p>`;
+    messagesContainer.innerHTML = "";
+    messagesContainer.appendChild(messageDiv);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        messageDiv.remove();
+    }, 3000);
+}
 </script>
-
-<style>
-.autocomplete-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    border: 1px solid #ccc;
-    background: #fff;
-    z-index: 10;
-    max-height: 200px;
-    overflow-y: auto;
-}
-
-.suggestion-item {
-    padding: 5px 10px;
-    cursor: pointer;
-}
-
-.suggestion-item:hover {
-    background-color: #f0f0f0;
-}
-</style>
 {% endblock %}

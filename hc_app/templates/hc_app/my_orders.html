@@ -18,10 +18,20 @@
                 {% endfor %}
             </ul>
 
-            {% if order.seller.userprofile %}
-            <p>Seller Address: {{ order.seller.userprofile.address_line1 }}, 
-               {{ order.seller.userprofile.city }}, {{ order.seller.userprofile.state }},
-               {{ order.seller.userprofile.postal_code }}, {{ order.seller.userprofile.country }}</p>
+            {% with first_item=order.items.all.0 %}
+            <p>Seller Address: {{ first_item.product.street }}, 
+                {{ first_item.product.city }}, 
+                {{ first_item.product.state }}, 
+                {{ first_item.product.zip_code }}, 
+                {{ first_item.product.country }}
+            </p>
+            {% endwith %}
+
+
+            {% if order.buyer_street %}
+            <p>Buyer Address: {{ order.buyer_street }}, 
+               {{ order.buyer_city }}, {{ order.buyer_state }},
+               {{ order.buyer_zip_code }}, {{ order.buyer_country }}</p>
             {% endif %}
 
             <form method="POST" action="{% url 'hc_app:delete_order' order.id %}">

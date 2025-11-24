@@ -30,8 +30,7 @@ urlpatterns = [
     path('checkout/', views.checkout_view, name='checkout'),
     path('ajax/address-suggestions/', views.address_suggestions, name='address_suggestions'),
     path('address-autocomplete/', views.address_autocomplete, name='address_autocomplete'),
-    path('place_order/', views.place_order, name='place_order'),
-    path('order-confirmation/', views.order_confirmation_view, name='order_confirmation'),
+    path('order-confirmation/<int:order_id>/', views.order_confirmation_view, name='order_confirmation'),
     path('my-orders/', views.my_orders_view, name='orders'),
     path('my-orders/delete/<int:order_id>/', views.delete_order, name='delete_order'),
 ]

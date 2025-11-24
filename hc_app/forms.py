@@ -25,7 +25,7 @@ class RegisterForm(forms.ModelForm):
 class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
-        fields = ['name', 'price', 'category', 'description', 'weight', 'length', 'width', 'height']
+        fields = ['name', 'price', 'category', 'description', 'weight', 'length', 'width', 'height', 'stock']
     
     
     '''
@@ -50,7 +50,7 @@ class BuyerAddressForm(forms.ModelForm):
             'contact_number': forms.TextInput(attrs={'placeholder': 'Enter your contact number', 'required': True}),
             'street': forms.TextInput(attrs={'placeholder': 'Street address', 'required': True}),
             'city': forms.TextInput(attrs={'placeholder': 'City', 'required': True}),
-            'state': forms.TextInput(attrs={'placeholder': 'State/Province', 'required': True}),
+            'state': forms.TextInput(attrs={'placeholder': 'State/Province', 'required': False}),
             'zip_code': forms.TextInput(attrs={'placeholder': 'ZIP/Postal code', 'required': True}),
             'country': forms.TextInput(attrs={'placeholder': 'Country', 'required': True}),
         }
@@ -59,5 +59,5 @@ class BuyerAddressForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         # Make all fields required
         for field in self.fields.values():
-            field.required = True
-            field.widget.attrs.update({'class': 'form-control', 'placeholder': field.label, 'required': True})
+            self.fields['state'].required = False
+            field.widget.attrs.update({'class': 'form-control', 'placeholder': field.label})

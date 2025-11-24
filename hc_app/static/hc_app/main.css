@@ -661,6 +661,49 @@ body.checkout .grand-total {
     margin-top: 20px;
 }
 
+/* Autocomplete dropdown container */
+body.checkout .autocomplete-dropdown {
+    position: absolute;
+    background-color: #ffffff !important;
+    border: 1px solid #ffffff;
+    border-radius: 8px;         /* Rounded corners for the container */
+    max-height: 250px;          /* Slightly taller */
+    overflow-y: auto;
+    width: 100%;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15); /* More pronounced shadow */
+    font-size: 14px;
+    padding: 5px 0;             /* spacing inside dropdown */
+}
+
+/* Each suggestion item */
+body.checkout .autocomplete-dropdown .suggestion-item {
+    padding: 10px 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 6px;         /* Rounded corners for individual items */
+    margin: 3px 5px;            /* spacing between items */
+    color: #333 !important;
+    background-color: #fff !important;
+}
+
+/* Hover effect for suggestion items */
+body.checkout .autocomplete-dropdown .suggestion-item:hover {
+    background-color: #e4794b !important;  /* Brand accent on hover */
+    color: #fff !important;
+    transform: translateX(2px); /* subtle hover shift */
+}
+
+/* Verified/unverified input styling */
+body.checkout #id_street.verified {
+    border: 2px solid #4CAF50;
+}
+
+body.checkout #id_street.unverified {
+    border: 2px solid #f44336;
+}
+
+
 /* -----------------------------
    9) UTILITIES / FORM HELPERS
    ----------------------------- */
@@ -830,4 +873,95 @@ body.checkout .grand-total {
 .place-order:hover {
     background-color: #d16a3e;
     cursor: pointer;
+}
+
+
+/* -----------------------------
+   CART PAGE LAYOUT
+   ----------------------------- */
+
+.cart-items {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+}
+
+/* Header row */
+.cart-header-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 2fr 1fr 1fr; /* Product | Unit Price | Quantity | Subtotal | Actions */
+    align-items: center;
+    font-weight: bold;
+    padding: 10px 0;
+    border-bottom: 2px solid #ccc;
+    gap: 10px;
+}
+
+/* Each cart row */
+.cart-item {
+    display: grid;
+    grid-template-columns: 2fr 1fr 2fr 1fr 1fr;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #e2e2e2;
+    gap: 10px;
+}
+
+.product-name {
+    text-align: left;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+/* Unit price and subtotal alignment */
+.unit-price,
+.item-subtotal {
+    text-align: right;
+    color: #555;
+    font-weight: 600;
+}
+
+/* Quantity container */
+.quantity {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 5px;
+}
+
+.quantity button {
+    min-width: 30px;
+    min-height: 30px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #f7f7f7;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.quantity button:hover {
+    background: #eaeaea;
+}
+
+.quantity-value {
+    min-width: 25px;
+    display: inline-block;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+/* Remove button */
+.remove-item {
+    padding: 6px 14px;
+    background: #ff6961;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.remove-item:hover {
+    background: #e05750;
 }

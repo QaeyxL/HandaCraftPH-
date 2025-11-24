@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from twilio.rest import Client
 from .forms import RegisterForm, ProductForm, CheckoutForm, BuyerAddressForm
 import requests, easypost
+from easypost import EasyPostClient
 from random import choice
 from .models import Product, Category, CartItem, ProductImage, Order, OrderItem, UserProfile
 from django.http import JsonResponse
@@ -137,6 +138,11 @@ def sell(request):
         if form.is_valid() and images:
             product = form.save(commit=False)
             product.seller = request.user
+            product.seller_street = request.POST.get('street1')
+            product.seller_city = request.POST.get('city')
+            product.seller_state = request.POST.get('state')
+            product.seller_zip_code = request.POST.get('zip')
+            product.seller_country = request.POST.get('country', 'PH')
             product.save()
 
             for image in request.FILES.getlist('images'):
@@ -200,9 +206,16 @@ def home_view(request):
 @login_required
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, id=product_id)
+
+    if product.stock <= 0:
+        return JsonResponse({"error": 'Product is out of stock.'}, status=400) # inventory
+
     cart_item, created = CartItem.objects.get_or_create(user=request.user, product=product)
+
     if not created:
-        cart_item.quantity += 1
+        if cart_item.quantity + 1 > product.stock:
+            return JsonResponse({"error": 'Cannot add more items than available in stock.'}, status=400) # inventory
+        cart_item.quantity += 1 
         cart_item.save()
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':  
@@ -249,14 +262,17 @@ def cart_view(request):
         'total': total
     })
 
+
 @login_required
 def update_cart(request, item_id):
-    """Increase or decrease quantity of a cart item"""
     cart_item = get_object_or_404(CartItem, id=item_id, user=request.user)
 
-    if request.method == 'POST':
+    if request.method == 'POST' and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         action = request.POST.get('action')
+        
         if action == 'increase':
+            if hasattr(cart_item.product, 'stock') and cart_item.product.stock <= cart_item.quantity:
+                return JsonResponse({"error": "Product is out of stock."})
             cart_item.quantity += 1
             cart_item.save()
         elif action == 'decrease':
@@ -264,8 +280,25 @@ def update_cart(request, item_id):
                 cart_item.quantity -= 1
                 cart_item.save()
             else:
-                cart_item.delete() 
+                cart_item.delete()
+                # recalc cart total if item deleted
+                cart_total = sum(item.product.price * item.quantity for item in CartItem.objects.filter(user=request.user))
+                return JsonResponse({"success": True, "quantity": 0, "cart_total": float(cart_total), "item_subtotal": 0})
+
+        item_subtotal = cart_item.product.price * cart_item.quantity
+        cart_total = sum(item.product.price * item.quantity for item in CartItem.objects.filter(user=request.user))
+
+        return JsonResponse({
+            "success": True,
+            "quantity": cart_item.quantity,
+            "item_subtotal": float(item_subtotal),
+            "cart_total": float(cart_total)
+        })
+
+    return JsonResponse({"error": "Invalid request"})
     return redirect('hc_app:cart_view')
+
+
 
 @login_required
 def remove_from_cart(request, item_id):
@@ -274,58 +307,186 @@ def remove_from_cart(request, item_id):
     return redirect('hc_app:cart_view')
 
 
-easypost.api_key = settings.EASYPOST_API_KEY
+easypost_client = EasyPostClient(settings.EASYPOST_API_KEY)
 
 @login_required
 def checkout_view(request):
     cart_items = CartItem.objects.filter(user=request.user)
-    seller_totals = {}
-    shipping_flat_rate = 100
 
+    # Group cart by seller
+    seller_totals = {}
+    shipping_flat_rate = Decimal('100.00')
     for item in cart_items:
         seller = item.product.seller
         if seller.id not in seller_totals:
             seller_totals[seller.id] = {
                 "seller": seller,
                 "items": [],
-                "subtotal": 0,
+                "subtotal": Decimal('0'),
                 "shipping": shipping_flat_rate,
                 "estimated_delivery": datetime.now().date() + timedelta(days=5),
             }
         seller_totals[seller.id]["items"].append(item)
         seller_totals[seller.id]["subtotal"] += item.product.price * item.quantity
 
-    total_amount = sum(data["subtotal"] + data["shipping"] for data in seller_totals.values())
+    # Ensure buyer profile exists
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
 
-    if request.method == "POST" and not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+    # Check if this is an AJAX request
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
+    if request.method == "POST":
         form = BuyerAddressForm(request.POST, instance=profile)
-        payment_method = request.POST.get("payment_method", "Cash on Delivery")
+        
+        # AJAX SHIPPING CALCULATION ONLY - Return JSON
+        if is_ajax and "calculate_shipping" in request.POST:
+            print("=== AJAX Shipping Calculation ===")
+            
+            if form.is_valid():
+                temp_profile = form.save(commit=False)
+                
+                for seller_id, data in seller_totals.items():
+                    seller_profile, _ = UserProfile.objects.get_or_create(user=data["seller"])
+                    to_country = temp_profile.country.strip().lower().replace(" ", "")
 
-        if form.is_valid():
-            profile.save()
-            for data in seller_totals.values():
-                order = Order.objects.create(
-                    buyer=request.user,
-                    seller=data["seller"],
-                    total=data["subtotal"] + data["shipping"],
-                    shipping_cost=data["shipping"],
-                    payment_method=payment_method,
-                    status="Pending"
-                )
-                for item in data["items"]:
-                    OrderItem.objects.create(
-                        order=order,
-                        product=item.product,
-                        quantity=item.quantity,
-                        subtotal=item.product.price * item.quantity
-                    )
-            cart_items.delete()
-            return redirect("hc_app:order_confirmation")
-        else:
-            messages.error(request, "Please fill out all required fields.")
+                    # Philippines flat rate
+                    if to_country in ["philippines", "ph"]:
+                        shipping_cost = shipping_flat_rate
+
+                    # USA -> use EasyPost
+                    elif to_country in ["usa", "unitedstates", "unitedstatesofamerica", "us"]:
+                        try:
+                            to_address = easypost_client.address.create(
+                                name=request.user.username,
+                                street1=temp_profile.street,
+                                city=temp_profile.city,
+                                state=temp_profile.state,
+                                zip=temp_profile.zip_code,
+                                country="US",
+                                phone=temp_profile.contact_number
+                            )
+
+                            from_address = easypost_client.address.create(
+                                name=data["seller"].username,
+                                street1=seller_profile.street or "123 Example St",
+                                city=seller_profile.city or "City",
+                                state=seller_profile.state or "State",
+                                zip=seller_profile.zip_code or "0000",
+                                country="US",
+                                phone=seller_profile.contact_number or "0000000000"
+                            )
+
+                            parcel = easypost_client.parcel.create(
+                                length=10, width=5, height=5, weight=16
+                            )
+
+                            shipment = easypost_client.shipment.create(
+                                to_address=to_address,
+                                from_address=from_address,
+                                parcel=parcel,
+                                options={"currency": "USD"}
+                            )
+
+                            rates = shipment.rates
+                            if rates:
+                                lowest_rate = min(float(r.rate) for r in rates)
+                                shipping_cost = Decimal(str(round(lowest_rate * 60, 2)))
+                            else:
+                                shipping_cost = shipping_flat_rate
+
+                        except Exception as e:
+                            print(f"EasyPost error: {e}")
+                            shipping_cost = shipping_flat_rate
+                    else:
+                        return JsonResponse({
+                            "success": False,
+                            "error": f"Delivery to {temp_profile.country} is not supported."
+                        })
+
+                    data["shipping"] = shipping_cost
+                
+                temp_profile.save()
+                total_amount = sum(d["subtotal"] + d["shipping"] for d in seller_totals.values())
+                
+                response_data = {
+                    "success": True,
+                    "seller_totals": [
+                        {"id": str(sid), "shipping": str(d["shipping"])} 
+                        for sid, d in seller_totals.items()
+                    ],
+                    "total_amount": str(total_amount)
+                }
+                print(f"Returning JSON: {response_data}")
+                return JsonResponse(response_data)
+            else:
+                return JsonResponse({
+                    "success": False, 
+                    "error": "Please fill out all required fields correctly."
+                })
+        
+        # PLACE ORDER - Regular form submission (NOT AJAX)
+        elif "place_order" in request.POST:
+            print("=== Place Order ===")
+            payment_method = request.POST.get("payment_method", "")
+
+            if not payment_method:
+                messages.error(request, "Please select a payment method.")
+            elif form.is_valid():
+                temp_profile = form.save()
+
+                # Stock check
+                stock_error = False
+                for data in seller_totals.values():
+                    for item in data["items"]:
+                        if item.quantity > item.product.stock:
+                            messages.error(request, f"Not enough stock for {item.product.name}. Stock: {item.product.stock}")
+                            stock_error = True
+                            break
+                    if stock_error:
+                        break
+
+                if not stock_error:
+                    # Create orders
+                    created_orders = []
+                    for seller_id, data in seller_totals.items():
+                        order = Order.objects.create(
+                            buyer=request.user,
+                            seller=data["seller"],
+                            total=data["subtotal"] + data["shipping"],
+                            shipping_cost=data["shipping"],
+                            payment_method=payment_method,
+                            status="Pending",
+                            estimated_delivery=data["estimated_delivery"],
+                            buyer_street=temp_profile.street,
+                            buyer_city=temp_profile.city,
+                            buyer_state=temp_profile.state,
+                            buyer_zip_code=temp_profile.zip_code,
+                            buyer_country=temp_profile.country,
+                            seller_street=data["items"][0].product.seller_street,
+                            seller_city=data["items"][0].product.seller_city,
+                            seller_state=data["items"][0].product.seller_state,
+                            seller_zip_code=data["items"][0].product.seller_zip_code,
+                            seller_country=data["items"][0].product.seller_country
+                        )
+                        for item in data["items"]:
+                            OrderItem.objects.create(
+                                order=order,
+                                product=item.product,
+                                quantity=item.quantity,
+                                subtotal=item.product.price * item.quantity
+                            )
+                        created_orders.append(order)
+
+                    cart_items.delete()
+                    messages.success(request, "Order placed successfully!")
+                    return redirect("hc_app:order_confirmation", order_id=created_orders[0].id)
+            else:
+                messages.error(request, "Please fill out all required fields.")
+
     else:
         form = BuyerAddressForm(instance=profile)
+
+    total_amount = sum(data["subtotal"] + data["shipping"] for data in seller_totals.values())
 
     return render(request, "hc_app/checkout.html", {
         "cart_items": cart_items,
@@ -333,6 +494,9 @@ def checkout_view(request):
         "total_amount": total_amount,
         "form": form,
     })
+
+
+
 
 @login_required
 @csrf_exempt
@@ -348,7 +512,7 @@ def address_suggestions(request):
                 city='',
                 state='',
                 zip='',
-                country='US'
+                country='PH'
             )
             if hasattr(results, 'street1'):
                 suggestions.append({
@@ -366,30 +530,43 @@ def address_suggestions(request):
 @login_required
 def address_autocomplete(request):
     query = request.GET.get("q", "")
-    if not query:
+    country = request.GET.get("country", "")  # optional: filter by country
+
+    if len(query) < 3:
         return JsonResponse([], safe=False)
 
-    try:
-        addresses = easypost.Address.create(
-            verify=["delivery"],
-            street1=query,
-            city="",
-            state="",
-            zip="",
-            country="PH" 
-        )
-        suggestions = []
-        for addr in addresses if isinstance(addresses, list) else [addresses]:
+    # Build Nominatim API URL
+    params = {
+        "q": query,
+        "format": "json",
+        "addressdetails": 1,
+        "limit": 5,  # number of suggestions
+    }
+    if country:
+        params["countrycodes"] = country.lower()  # e.g., "ph" or "us"
+
+    response = requests.get("https://nominatim.openstreetmap.org/search", params=params, headers={"User-Agent": "HandacraftPH/1.0"})
+    results = response.json()
+
+    suggestions = []
+    for r in results:
+        addr = r.get("address", {})
+        street = addr.get("road") or addr.get("pedestrian") or ""
+        city = addr.get("city") or addr.get("town") or addr.get("village") or ""
+        state = addr.get("state") or ""
+        zip_code = addr.get("postcode") or ""
+        country_name = addr.get("country") or ""
+
+        if street and city:
             suggestions.append({
-                "street": addr.street1,
-                "city": addr.city,
-                "state": addr.state,
-                "zip_code": addr.zip,
-                "country": addr.country,
+                "street": street,
+                "city": city,
+                "state": state,
+                "zip_code": zip_code,
+                "country": country_name
             })
-        return JsonResponse(suggestions, safe=False)
-    except Exception as e:
-        return JsonResponse([], safe=False)
+
+    return JsonResponse(suggestions, safe=False)
 
 @login_required
 def dashboard_view(request):
@@ -404,73 +581,6 @@ def dashboard_view(request):
     return render(request, "hc_app/dashboard.html")
 
 
-
-@login_required
-def place_order(request):
-    cart_items = CartItem.objects.filter(user=request.user)
-
-    if not cart_items.exists():
-        return redirect('hc_app:cart_view')
-
-    seller_orders = {}  
-    shipping_flat_rate = 100  
-
-    for item in cart_items:
-        seller = item.product.seller
-        if seller.id not in seller_orders:
-            seller_orders[seller.id] = {
-                "seller": seller,
-                "items": [],
-                "total": 0,
-                "shipping_cost": shipping_flat_rate,
-                "seller_address": getattr(getattr(seller, 'userprofile', None), 'contact_number', 'No address'),
-            }
-
-        subtotal = item.product.price * item.quantity
-        seller_orders[seller.id]["items"].append({
-            "product": item.product,
-            "quantity": item.quantity,
-            "subtotal": subtotal,
-        })
-        seller_orders[seller.id]["total"] += subtotal
-
-    orders_list = []
-    grand_total = 0
-
-    for data in seller_orders.values():
-        order = Order.objects.create(
-            buyer=request.user,
-            seller=data["seller"],
-            total=data["total"],
-            shipping_cost=data["shipping_cost"],
-            payment_method="Mock Payment",
-            status="Pending"
-        )
-
-        # Save each item
-        for item in data["items"]:
-            OrderItem.objects.create(
-                order=order,
-                product=item["product"],
-                quantity=item["quantity"],
-                subtotal=item["subtotal"]
-            )
-
-        order.estimated_delivery = datetime.now().date() + timedelta(days=5)
-        order.seller_address = data["seller_address"]
-        orders_list.append(order)
-
-        grand_total += data["total"] + data["shipping_cost"]
-
-    cart_items.delete()
-
-    context = {
-        "orders": orders_list,
-        "grand_total": grand_total,
-    }
-
-    return render(request, "hc_app/order_confirmation.html", context)
-
 @login_required
 def my_orders_view(request):
     orders = Order.objects.filter(buyer=request.user).order_by("-created_at")
@@ -480,24 +590,18 @@ def my_orders_view(request):
     })
 
 @login_required
-def order_confirmation_view(request):
-    latest_order = (
-        request.user.orders.all()
-        .order_by("-created_at")
-        .prefetch_related("items")
-        .first()
-    )
-
-    if not latest_order:
-        return render(request, "hc_app/order_confirmation.html", {
-            "order": None,
-            "message": "No recent order found.",
-        })
+def order_confirmation_view(request, order_id):
+    try:
+        order = Order.objects.get(id=order_id, buyer=request.user)
+        order_items = OrderItem.objects.filter(order=order)
+    except Order.DoesNotExist:
+        return render(request, "hc_app/order_confirmation.html", {"message": "Order not found."})
 
     return render(request, "hc_app/order_confirmation.html", {
-        "order": latest_order,
-        "order_items": latest_order.items.all(),
+        "order": order,
+        "order_items": order_items
     })
+
 
 @login_required
 def delete_order(request, order_id):
