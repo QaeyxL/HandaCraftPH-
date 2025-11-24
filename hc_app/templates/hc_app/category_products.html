@@ -5,7 +5,7 @@
 <h2>Products in {{ category.name }}</h2>
 <div class="featured-grid">
     {% for product in products %}
-    <div class="craft-card card" style="width: 18rem; margin-bottom: 20px;">
+    <div class="craft-card card position-relative" style="width: 18rem; margin-bottom: 20px;">
         {% if product.images.count %}
             <div id="carouselProduct{{ product.id }}" class="carousel slide" data-bs-ride="carousel">
                 <div class="carousel-inner">
@@ -30,18 +30,27 @@
             <img src="{% static 'hc_app/images/default-product.png' %}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="Default Product" loading="lazy">
         {% endif %}
 
+        {# Out of stock badge overlay #}
+        {% if product.stock|default:0 <= 0 %}
+            <span class="badge bg-danger position-absolute" style="top:10px; right:10px; z-index:10;">Out of stock</span>
+        {% endif %}
+
         <div class="card-body">
             <h5 class="card-title"><a href="{% url 'hc_app:product_detail' product.id %}">{{ product.name }}</a></h5>
             <p class="card-text">by {{ product.seller.username }}</p>
             <p class="price">₱{{ product.price }}</p>
 
             {% if user.is_authenticated %}
-            <form action="{% url 'hc_app:add_to_cart' product.id %}" method="post">
-                {% csrf_token %}
-                <button type="submit" class="add-to-cart-btn">Add to Cart</button>
-            </form>
+                {% if product.stock|default:0 > 0 %}
+                    <form action="{% url 'hc_app:add_to_cart' product.id %}" method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="add-to-cart-btn">Add to Cart</button>
+                    </form>
+                {% else %}
+                    <button class="btn btn-secondary" disabled>Out of stock</button>
+                {% endif %}
             {% else %}
-            <p><a href="{% url 'hc_app:login' %}">Login</a> to add to cart</p>
+                <p><a href="{% url 'hc_app:login' %}">Login</a> to add to cart</p>
             {% endif %}
         </div>
     </div>

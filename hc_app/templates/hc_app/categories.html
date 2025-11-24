@@ -16,7 +16,7 @@
             <p class="card-text">{{ category.description|default:"" }}</p>
             <div id="cat-{{ category.id }}-items" class="collapse">
               <ul class="list-unstyled">
-                {% for p in category.product_set.all|slice:":5" %}
+                {% for p in category.preview_products %}
                   <li><a href="{% url 'hc_app:product_detail' p.id %}">{{ p.name }}</a></li>
                 {% empty %}
                   <li class="text-muted">No products in this category.</li>

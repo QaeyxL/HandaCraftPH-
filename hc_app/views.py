@@ -157,6 +157,23 @@ def login_view(request):
         form = AuthenticationForm()
     return render(request, 'hc_app/login.html', {'form': form, 'quote': quote})
 
+
+# Explicit logout view to ensure consistent behavior across deployments.
+def logout_view(request):
+    """Log out the current user and redirect to the home page with a message.
+
+    Using an explicit view (instead of the class-based LogoutView) gives us
+    control and makes debugging simpler if a hosting environment blocks
+    the default view or requires a POST.
+    """
+    try:
+        auth_logout(request)
+    except Exception:
+        # best-effort logout; continue to redirect
+        pass
+    messages.info(request, 'You have been logged out.')
+    return redirect('hc_app:home')
+
 # home_view is defined later with categories/products context — keep the consolidated version below
 
 @login_required
@@ -354,7 +371,17 @@ def edit_product(request, pk):
 
 def category_view(request, category_id):
     category = get_object_or_404(Category, id=category_id)
-    products = Product.objects.filter(category=category)
+    # Some deployments contain duplicate Category rows with the same name but
+    # different ids. To ensure products linked to any duplicate category are
+    # included, match by the category name (case-insensitive) as well as the
+    # chosen Category instance.
+    # Include products that point to the exact Category instance OR any other
+    # Category rows that share the same name. This ensures products remain
+    # visible even when their `stock` is zero and when duplicate Category rows
+    # exist in the database.
+    products = Product.objects.filter(
+        Q(category=category) | Q(category__name__iexact=category.name)
+    )
     return render(request, 'hc_app/category_products.html', {'category': category, 'products': products})
 
 def categories_list(request):   # edit22 - added
@@ -363,9 +390,16 @@ def categories_list(request):   # edit22 - added
     categories = get_unique_categories()
     # prefetch products for the selected category ids to avoid N+1 when templates access products
     # build mapping by id
-    prefetch_qs = Category.objects.filter(id__in=[c.id for c in categories]).prefetch_related('product_set')
+    prefetch_qs = Category.objects.filter(id__in=[c.id for c in categories])
     cat_map = {c.id: c for c in prefetch_qs}
     ordered = [cat_map[c.id] for c in categories if c.id in cat_map]
+
+    # Attach a preview_products attribute to each category that includes products
+    # linked to any Category row with the same name. This ensures previews show
+    # even when products reference duplicate Category rows.
+    for c in ordered:
+        c.preview_products = Product.objects.filter(category__name__iexact=c.name)[:5]
+
     return render(request, "hc_app/categories.html", {"categories": ordered})
 
 def home_view(request):
@@ -378,9 +412,53 @@ def home_view(request):
         'featured_products': featured_products
     })
 
+
+def debug_status(request):
+    """Return simple JSON with counts for quick debugging of categories/cart.
+
+    Intended as a temporary helper to diagnose why categories or cart look empty
+    in a deployment. Not intended for production use.
+    """
+    from django.http import JsonResponse
+    try:
+        cat_count = Category.objects.count()
+        category_names = list(Category.objects.values_list('name', flat=True)[:50])
+    except Exception as e:
+        cat_count = None
+        category_names = []
+
+    try:
+        prod_count = Product.objects.count()
+    except Exception:
+        prod_count = None
+
+    cart_count = None
+    try:
+        if request.user.is_authenticated:
+            cart_count = CartItem.objects.filter(user=request.user).count()
+        else:
+            cart_count = 0
+    except Exception:
+        cart_count = None
+
+    return JsonResponse({
+        'categories_count': cat_count,
+        'categories_sample': category_names,
+        'products_count': prod_count,
+        'user_authenticated': request.user.is_authenticated,
+        'cart_count': cart_count,
+    })
+
 @login_required
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, id=product_id)
+    # Server-side stock protection: refuse to add if stock is zero or negative.
+    if hasattr(product, 'stock') and product.stock <= 0:
+        # If AJAX request, return JSON error so client-side can show it without redirect.
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': 'Product is out of stock.'}, status=400)
+        messages.error(request, 'Product is out of stock and cannot be added to the cart.')
+        return redirect('hc_app:product_detail', pk=product.id)
     # Accept optional customization JSON (from product page customizer)
     customization = None
     item_price = None
@@ -459,7 +537,12 @@ def category_products(request, category_name):
             if getattr(settings, 'CANONICALIZE_CATEGORY_SLUGS', True):
                 return redirect('hc_app:category_products', category_name=category.slug)
 
-    products = Product.objects.filter(category=category)
+    # Include products that reference this Category instance or any Category
+    # with the same name. This prevents products from being omitted when
+    # duplicate Category rows exist or when stock is zero.
+    products = Product.objects.filter(
+        Q(category=category) | Q(category__name__iexact=category.name)
+    )
     return render(
         request,
         'hc_app/category_products.html',
@@ -482,9 +565,17 @@ def my_listings(request):
     products = Product.objects.filter(seller=request.user)
     return render(request, 'hc_app/my_listings.html', {'products': products})
 
-@login_required
 def cart_view(request):
-    cart_items = CartItem.objects.filter(user=request.user)
+    """Show the cart. Allow anonymous users to view an empty cart and prompt to log in.
+
+    Previously this view required login; making it public avoids confusing redirects
+    when users click the Cart icon. For anonymous users we show an empty cart and
+    a message encouraging sign-in.
+    """
+    if request.user.is_authenticated:
+        cart_items = CartItem.objects.filter(user=request.user)
+    else:
+        cart_items = []
 
     total = 0
     for item in cart_items:

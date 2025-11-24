@@ -119,8 +119,10 @@ HandaCraftPH-
 └─ requirements.txt
 
 ```
-## HandaCraftPH Overview
-HandaCraftPH is designed as a culturally conscious marketplace system that supports MSMEs and traditional artisans through customizable workflows and role-based access.
+## HandaCraftPH's Concept
+There is an abundance of local artisans in the Philippines, and while there are bazaars that allow them to showcase their work, some locations cannot be accessible by interested buyers. Moreover, potential customers have to go through each artisan's social media websites to order. The latter is handled by HandaCraftPH as it bridges the gap between local artisans and nationwide customers by offering a *specialized online marketplace* where buyers can discover, customize, and purchase crafted products, whether it’s rooted in tradition, cultural heritage, or personal creativity. It helps local artisans gain visibility beyond their local communities, connect with a broader market, and grow their businesses through accessible digital tools and direct engagement with customers.
+
+For buyers, it offers a meaningful way to discover and personalize unique crafts that reflect culture or personal identity, while supporting and promoting local craftsmanship across the Philippines.
 
 ## Tech stack & version numbers.
 
@@ -193,6 +195,10 @@ API uses OpenStreetMap data. This is used to verify and/or suggest addresses to 
 |<img width="240" src="https://github.com/user-attachments/assets/41bf28fe-7953-43fb-ac4a-7195c9234877" /> |<img src="https://github.com/user-attachments/assets/edbaeb8e-1dc7-4d48-b16d-4be3a2aaa2e1" width="220"/> | 
 | <img height="300" src="https://github.com/user-attachments/assets/46f4e80f-4e74-40bd-8270-50fff2866b90" />| <img width="300" src="https://github.com/user-attachments/assets/a6542454-c9cd-4e5a-92bb-f0f01ccc4ae7" />|
 |<img height="240" src="https://github.com/user-attachments/assets/13b80533-c937-4f66-ab28-896e7e8322e5" /> |<img width="300" src="https://github.com/user-attachments/assets/49179aa1-12f3-4a48-ba49-7fc8d4862983" />|
+
+## Recent Changes as of November 24, 2025:
+<img width="2559" height="1305" alt="image" src="https://github.com/user-attachments/assets/b0c0cd13-e86b-46fd-9caf-84087270ddb4" />  <img width="2339" height="1298" alt="image" src="https://github.com/user-attachments/assets/32e83349-660f-4aba-bace-793036778367" />
+<img width="2328" height="1304" alt="image" src="https://github.com/user-attachments/assets/e1363097-939a-4ccd-80c4-86ceaae615be" />
 
 ## 🐞 Known Issues & Limitations
 - **No payment gateway integration**  
