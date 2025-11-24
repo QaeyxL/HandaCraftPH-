@@ -1,4 +1,103 @@
-# HandaCraftPH-Overview
+# HandaCraftPH
+
+## Project Tree
+```
+HandaCraftPH-
+├─ client
+│  └─ scripts
+│     └─ dashboard.js
+├─ handacraftph
+│  └─ handacraftph
+│     ├─ asgi.py
+│     ├─ handacraftph
+│     │  ├─ asgi.py
+│     │  ├─ settings.py
+│     │  ├─ urls.py
+│     │  ├─ wsgi.py
+│     │  └─ __init__.py
+│     ├─ settings.py
+│     ├─ urls.py
+│     ├─ wsgi.py
+│     └─ __init__.py
+├─ hc_app
+│  ├─ admin.py
+│  ├─ apps.py
+│  ├─ context_processors.py
+│  ├─ forms.py
+│  ├─ migrations
+│  │  ├─ 0001_initial.py
+│  │  ├─ 0002_category.py
+│  │  ├─ 0003_cartitem.py
+│  │  ├─ 0004_alter_product_category.py
+│  │  ├─ 0005_alter_category_name.py
+│  │  ├─ 0006_productimage.py
+│  │  ├─ 0007_alter_productimage_image.py
+│  │  ├─ 0008_remove_product_video_order_orderitem_userprofile.py
+│  │  ├─ 0009_product_height_product_length_product_weight_and_more.py
+│  │  ├─ 0010_alter_userprofile_city_and_more.py
+│  │  ├─ 0011_order_shipping_label_url_order_tracking_code.py
+│  │  ├─ 0012_product_stock.py
+│  │  ├─ 0013_order_estimated_delivery.py
+│  │  ├─ 0014_order_buyer_city_order_buyer_country_and_more.py
+│  │  ├─ 0015_product_seller_city_product_seller_country_and_more.py
+│  │  ├─ 0016_remove_order_shipping_label_url_and_more.py
+│  │  ├─ 0017_quote.py
+│  │  └─ __init__.py
+│  ├─ models.py
+│  ├─ products
+│  │  └─ media
+│  ├─ static
+│  │  └─ hc_app
+│  │     ├─ dashboard.css
+│  │     ├─ images
+│  │     │  └─ logo.png
+│  │     └─ main.css
+│  ├─ templates
+│  │  └─ hc_app
+│  │     ├─ base.html
+│  │     ├─ cart.html
+│  │     ├─ catalog.html
+│  │     ├─ category_products.html
+│  │     ├─ checkout.html
+│  │     ├─ dashboard.html
+│  │     ├─ home.html
+│  │     ├─ index.html
+│  │     ├─ login.html
+│  │     ├─ my_listings.html
+│  │     ├─ my_orders.html
+│  │     ├─ order_confirmation.html
+│  │     ├─ password_change.html
+│  │     ├─ password_change_done.html
+│  │     ├─ product_detail.html
+│  │     ├─ register.html
+│  │     ├─ search_results.html
+│  │     └─ sell.html
+│  ├─ templatetags
+│  │  ├─ mul_filters.py
+│  │  └─ __init__.py
+│  ├─ tests.py
+│  ├─ urls.py
+│  ├─ views.py
+│  └─ __init__.py
+├─ ITMGT 45.03 - Group 3 GC2.pdf
+├─ manage.py
+├─ media
+│  └─ products
+│     └─ images
+│        ├─ Screenshot_2025-03-13_223830.png
+│        ├─ Screenshot_2025-10-13_224110.png
+│        ├─ Screenshot_2025-10-13_230045.png
+│        ├─ Screenshot_2025-11-05_005713.png
+│        ├─ Screenshot_2025-11-05_013525.png
+│        ├─ Screenshot_2025-11-10_092310.png
+│        ├─ Screenshot_2025-11-12_031910.png
+│        └─ Screenshot_2025-11-23_153907.png
+├─ Procfile
+├─ README.md
+└─ requirements.txt
+
+```
+## HandaCraftPH Overview
 HandaCraftPH is designed as a culturally conscious marketplace system that supports MSMEs and traditional artisans through customizable workflows and role-based access.
 
 ## Tech stack & version numbers.
@@ -9,6 +108,9 @@ HandaCraftPH is designed as a culturally conscious marketplace system that suppo
 | Back-End | Django | Secure, scalable, and comes with built-in tools for rapid development |5.2.8|
 | Database | SQLite | Lightweight, fast, and ideal for small to medium-sized projects | 3.50.4| 
 | External APIs / services | 1. Twilio</br> 2. Easypost API </br> 3. Quotable.io | | 1. 9.8.5 |
+
+## Deployment link.
+The live site is hosted on Render:  (https://handacraftph.onrender.com)
 
 ## Setup instructions.
 1. To run HandaCraftPH locally:
@@ -27,6 +129,7 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate`
 `python manage.py runserver`
 6. Access the app
 <br> Visit http://127.0.0.1:8000/ in your browser.
+
 ## API documentation & links.
 ### Twilio API
 Used for sending SMS and WhatsApp notifications during registration and order confirmation.
@@ -39,8 +142,16 @@ Used for shipping and tracking packages across multiple carriers.
 ### Quotable.io API
 Used to fetch random quotes for enhancing the login and registration pages.
 [Quotable.io API](https://github.com/lukePeavey/quotable)
-## Deployment link.
-The live site is hosted on Render:  (https://handacraftph.onrender.com)
+
+### Nominatim API
+API uses OpenStreetMap data. This is used to verify and/or suggest addresses to the user.
+[Nominatim API] (https://nominatim.org/release-docs/latest/)
+
+## List of Implemented Features
+
+
+
+
 ## 📸 Before/After Performance Screenshots
 | Before | After | 
 |---------------------|--------------------|
@@ -56,8 +167,6 @@ The live site is hosted on Render:  (https://handacraftph.onrender.com)
   Some forms lack detailed validation feedback, which may confuse users.
 - **No image compression**  
   Uploaded product images are stored as-is, potentially affecting performance.
-- **No admin dashboard**  
-  Seller management is done via basic views without a centralized admin interface.
 - **Manual deployment triggers**  
   Some deployment platforms may require manual redeploys if auto-deploy is misconfigured.
 - **API rate limits not handled**  
@@ -66,3 +175,4 @@ The live site is hosted on Render:  (https://handacraftph.onrender.com)
   The site lacks ARIA labels and keyboard navigation enhancements for screen readers.
 - **Mobile responsiveness may vary**  
   While designed to be responsive, some layouts may break on smaller screens.
+
