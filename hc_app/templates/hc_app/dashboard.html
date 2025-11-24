@@ -93,10 +93,14 @@
                 </div>
 
                 <div class="messages">
-                    {% for q in recent_quotes %}   <!-- edit22 - added -->
-                        <div class="mb-2">
-                        <strong>{{ q.buyer.username }}</strong>: {{ q.message }}
-                        <small class="text-muted">({{ q.created_at|date:"Y-m-d H:i" }})</small>
+                    {% for quote in recent_quotes %}
+                        <div class="chat-message">
+                            <div class="chat-message-header">
+                                <span class="chat-message-date">{{ quote.created_at|date:"F j, Y" }}</span>
+                            </div>
+                            <div class="chat-message-body">
+                                <p>{{ quote.message }}</p>
+                            </div>
                         </div>
                     {% empty %}
                         <p>No quotes yet.</p>
