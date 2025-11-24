@@ -149,9 +149,17 @@ API uses OpenStreetMap data. This is used to verify and/or suggest addresses to 
 
 ## List of Implemented Features
 - **User Login**
+  A user can be a seller and a buyer without needing separate accounts for it. They must make an account to access HandaCraftPH. 
+
 - **Catalog and Search**
+  Products are filtered by their category. If a user wishes to search for a specific product, they can use the search bar and the links for the product will be shown to them. 
+
 - **Seller Dashboard**
-- **Checkout and Payment**
+
+
+- **Checkout and Payment** 
+  The user will enter their location credentials with the help of Nominatim API that can recommend them verified addresses. For orders that are from or to the United States of America, the EasyPost API will provide rates and is converted into PHP (Philippine Peso). For orders that are from or to any point in the Philippines, a flat rate of Php 100 is set.
+
 - **Messaging System**
 
 
