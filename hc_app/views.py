@@ -370,10 +370,11 @@ def categories_list(request):   # edit22 - added
 def home_view(request):
     from .utils import get_unique_categories
     categories = get_unique_categories()
-    products = Product.objects.all()
+    # show recent products as featured crafts (most recently created first)
+    featured_products = Product.objects.order_by('-created_at')[:8]
     return render(request, 'hc_app/home.html', {
         'categories': categories,
-        'products': products
+        'featured_products': featured_products
     })
 
 @login_required
@@ -438,7 +439,10 @@ def add_to_cart(request, product_id):
     return redirect('hc_app:cart_view')
 
 def category_products(request, category_name):
-    category = get_object_or_404(Category, name=category_name)
+    # Accept either slug or name for category lookup to be tolerant of URL format
+    category = Category.objects.filter(slug__iexact=category_name).first()
+    if not category:
+        category = get_object_or_404(Category, name=category_name)
     products = Product.objects.filter(category=category)
     return render(
         request,

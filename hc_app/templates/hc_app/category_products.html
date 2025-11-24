@@ -31,7 +31,7 @@
         {% endif %}
 
         <div class="card-body">
-            <h5 class="card-title">{{ product.name }}</h5>
+            <h5 class="card-title"><a href="{% url 'hc_app:product_detail' product.id %}">{{ product.name }}</a></h5>
             <p class="card-text">by {{ product.seller.username }}</p>
             <p class="price">₱{{ product.price }}</p>
 

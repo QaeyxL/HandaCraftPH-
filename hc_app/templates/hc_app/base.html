@@ -38,11 +38,13 @@
                     <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Categories</a>
                     <ul class="dropdown-menu">
                         {% for category in categories %}
-                        <li>
-                            <a class="dropdown-item" href="{% url 'hc_app:category_products' category.name %}">
-                            {{ category.name }}
-                            </a>
-                        </li>
+                            <li>
+                                {% if category.slug %}
+                                    <a class="dropdown-item" href="{% url 'hc_app:category_products' category.slug %}">{{ category.name }}</a>
+                                {% else %}
+                                    <a class="dropdown-item" href="{% url 'hc_app:category_products' category.name %}">{{ category.name }}</a>
+                                {% endif %}
+                            </li>
                         {% endfor %}
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{% url 'hc_app:catalog' %}">View all products</a></li>
@@ -55,8 +57,6 @@
                 {% endif %}
             </ul>
         </nav>
-
-        {# Sustainability banner removed per request: 'Support Filipino craft' text removed from header #}
 
         <div class="nav-actions">
             <form method="get" action="{% url 'hc_app:search' %}" class="d-inline">   <!-- edit22 - added -->
@@ -90,7 +90,6 @@
                     {% if is_seller %}
                         <li><a class="dropdown-item" href="{% url 'hc_app:dashboard' %}">Dashboard</a></li>
                     {% endif %}
-                    <!-- Place Change Password and Logout after orders/dashboard -->
                     <li><a class="dropdown-item" href="{% url 'hc_app:password_change' %}">Change Password</a></li>
                     <li><a class="dropdown-item" href="{% url 'hc_app:logout' %}">Logout</a></li>
 

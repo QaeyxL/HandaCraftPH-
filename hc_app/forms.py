@@ -41,6 +41,18 @@ class ProductForm(forms.ModelForm):
     class Meta:
         model = Product
         fields = ['name', 'price', 'category', 'description', 'weight', 'length', 'width', 'height', 'stock']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Use deduplicated categories for the category select to avoid repeated names
+        try:
+            from .utils import get_unique_categories
+            cats = get_unique_categories()
+            # Set choices from the Category instances (ModelChoiceField expects choices or queryset)
+            self.fields['category'].choices = [(c.id, c.name) for c in cats]
+        except Exception:
+            # fallback to default queryset if helper fails
+            self.fields['category'].queryset = Category.objects.order_by('name')
     
     
     '''
