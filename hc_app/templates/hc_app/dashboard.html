@@ -46,7 +46,7 @@
                     <form method="post" action="{% url 'hc_app:update_order_status' order.id %}" class="d-inline">
                         {% csrf_token %}
                         <select name="status" class="form-select form-select-sm d-inline w-auto">
-                            {% for s in "Pending,Processing,Shipped,Delivered,Cancelled".split(',') %}
+                            {% for s in statuses %}
                                 <option value="{{ s }}" {% if order.status == s %}selected{% endif %}>{{ s }}</option>
                             {% endfor %}
                         </select>

@@ -597,11 +597,12 @@ def address_autocomplete(request):
 
 @login_required
 def dashboard_view(request):
-    user_products = Product.objects.filter(seller=request.user)   # edit22 - add (4)
+    user_products = Product.objects.filter(seller=request.user)   # edit22 - add (5)
     recent_orders = Order.objects.filter(seller=request.user).order_by('-created_at')[:10]    
     total_orders = Order.objects.filter(seller=request.user).count()
     total_customers = Order.objects.filter(seller=request.user).values('buyer').distinct().count()
-    # dummy stats
+    statuses = ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"] 
+    #  dummy stats
     context = {
         "total_customers": total_customers,
         "total_orders": total_orders,
@@ -610,6 +611,7 @@ def dashboard_view(request):
         "user_products": user_products,   # edit22 - edited "user_products": request.user.products.all()
         "users": User.objects.exclude(id=request.user.id),   # edit22 - added
         "recent_quotes": Quote.objects.filter(seller=request.user).order_by("-created_at")[:20],  # edit22 - added
+        "statuses": statuses,  # edit22 - added
         }
     return render(request, "hc_app/dashboard.html", context)   # edit22 - add context
 
