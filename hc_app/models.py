@@ -70,6 +70,10 @@ class CartItem(models.Model):
             return ''
         try:
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+            # show attribute:option pairs if available
+>>>>>>> Stashed changes
 =======
             # show attribute:option pairs if available
 >>>>>>> Stashed changes
@@ -152,7 +156,10 @@ class AuditLog(models.Model):
         return f"{self.get_action_display()} -> {self.target_user.username} @ {self.timestamp.isoformat()}"
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 =======
 >>>>>>> Stashed changes
 class SellerWorkflowTask(models.Model):
@@ -231,6 +238,10 @@ class ProductAttribute(models.Model):
     def __str__(self):
         return f"{self.product.name} - {self.attribute.name}"
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+                               
+>>>>>>> Stashed changes
 =======
                                
 >>>>>>> Stashed changes
