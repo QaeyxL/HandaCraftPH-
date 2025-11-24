@@ -2,15 +2,19 @@
    Base / Global
    -------------------- */
 body {
-  font-family: Arial, sans-serif;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   margin: 0;
-  padding: 20px;
-  background: #f5f5f5;
+  padding: 18px 20px 40px 20px;
+  background: #f7f8fa;
+  color: #222;
 }
 
 h1 {
   text-align: center;
-  margin-bottom: 20px;
+  margin: 8px 0 4px 0;
+  font-weight: 600;
+  font-size: 34px;
+  color: #1f2937;
 }
 
 
@@ -18,15 +22,16 @@ h1 {
    Layout / Grid
    -------------------- */
 .container {
-  margin-top: 48px; 
+  margin: 18px auto 0 auto;
+  max-width: 1200px;
   display: grid;
   /* Desktop (default) 4-column layout: two small stat panels, larger center panels, and a right column for .div7 */
   grid-template-areas:
     "div1 div2 div2 div7"
     "div3 div3 div4 div7"
     "div5 div6 div8 div7";    /*edit22 - replaced div6 with div8*/
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
+  grid-template-columns: 1fr 1fr 1fr 320px;
+  gap: 18px;
 }
 
 .div1 { grid-area: div1; }
@@ -44,22 +49,24 @@ h1 {
    -------------------- */
 /* Default card styling applied to each direct child inside .container */
 .container > div {
-  background: white;
-  border-radius: 10px;
-  padding: 15px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 6px 18px rgba(15,23,42,0.06);
+  min-height: 140px;
 }
 
 .container > div h2 {
-  margin: 0 0 8px 0;
+  margin: 0 0 12px 0;
   padding: 0;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 0.98rem;
+  font-weight: 700;
+  color: #111827;
 }
 
 .div1, .div2 {
-  padding: 6px 8px;
-  min-height: 40px; 
+  padding: 10px 14px;
+  min-height: 70px; 
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -72,31 +79,38 @@ h1 {
   font-weight: 600;
 }
 
-.div1 .stat-value, .div2 .stat-value {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: #222;
+.div1 .stat-value, .div2 .stat-value, .div-cart .stat-value {
+  font-size: 1.35rem;
+  font-weight: 800;
+  color: #0f172a;
+  background: linear-gradient(90deg,#f8fafc,#fff);
+  padding: 10px 14px;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(2,6,23,0.06);
 }
 /* Map container sizing so amCharts has space to render */
 #ph-map {
   width: 100%;
-  height: 280px; /* adjust as needed */
+  height: 260px; /* adjust as needed */
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
 }
 
 /* Legend displayed over the map (top-right) */
 .div5 { position: relative; }
 .map-legend {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  background: rgba(255,255,255,0.95);
-  border-radius: 8px;
-  padding: 8px 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.12);
-  font-size: 12px;
-  color: #222;
+  top: 12px;
+  right: 12px;
+  background: rgba(255,255,255,0.96);
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 6px 18px rgba(15,23,42,0.06);
+  font-size: 13px;
+  color: #111827;
   z-index: 2000;
-  min-width: 120px;
+  min-width: 140px;
 }
 .map-legend .item {
   display: flex;
@@ -120,8 +134,8 @@ h1 {
    -------------------- */
 .div7 {
   background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(15,23,42,0.06);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -137,24 +151,26 @@ h1 {
 
 .chat-container {
   display: flex;
-  height: 500px;
+  height: 520px;
 }
 
 /* Left sidebar (chat list) */
 .chat-list {
-  width: 30%;
-  border-right: 1px solid #eee;
-  background-color: #fafafa;
+  width: 260px;
+  min-width: 220px;
+  border-right: 1px solid #f1f5f9;
+  background-color: #fbfdff;
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  padding-right: 8px; /* leave room for scrollbar */
 }
 
 .chat-user {
-  padding: 15px;
-  border-bottom: 1px solid #eee;
+  padding: 12px 12px;
+  border-bottom: 1px solid #f1f5f9;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.12s ease-in-out;
 }
 
 .chat-user:hover { background: #f0f0f0; }
@@ -162,7 +178,7 @@ h1 {
 
 /* Right chat window */
 .chat-window {
-  width: 70%;
+  width: calc(100% - 260px);
   display: flex;
   flex-direction: column;
   background-color: #fff;
@@ -179,7 +195,7 @@ h1 {
 
 .messages {
   flex: 1;
-  padding: 20px;
+  padding: 18px;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -200,9 +216,9 @@ h1 {
 /* Input */
 .chat-input {
   display: flex;
-  padding: 10px;
-  border-top: 1px solid #eee;
-  background-color: #fafafa;
+  padding: 12px;
+  border-top: 1px solid #f1f5f9;
+  background-color: #fbfdff;
 }
 .chat-input input {
   flex: 1;
@@ -265,11 +281,14 @@ h1 {
     grid-template-areas:
       "div1 div2 div7"
       "div3 div4 div7"
-      "div5 div6 div7"    
+      "div5 div6 div7"
       "div8 div8 div7";   /*edit22 - added div8 area*/
-    grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
+    grid-template-columns: 1fr 1fr 320px;
+    gap: 14px;
   }
+
+  .chat-list { width: 240px; }
+  .chat-window { width: calc(100% - 240px); }
 }
 
 /* Mobile: single column stack */
@@ -289,6 +308,11 @@ h1 {
 
   /* Make chat vertical on small screens */
   .chat-container { flex-direction: column; height: auto; }
-  .chat-list { width: 100%; border-right: none; border-bottom: 1px solid #eee; }
+  .chat-list { width: 100%; border-right: none; border-bottom: 1px solid #f1f5f9; }
   .chat-window { width: 100%; }
+  .container > div { min-height: 100px; }
 }
+
+/* Chart placeholders and canvas sizing */
+.chart-placeholder { min-height: 160px; }
+canvas.chart-placeholder { width: 100% !important; height: 220px !important; }

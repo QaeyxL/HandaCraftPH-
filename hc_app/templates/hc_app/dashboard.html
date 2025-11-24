@@ -31,12 +31,12 @@
                 {% endfor %}
             </select>
         </div>
-        <div id="monthly-sales-chart" class="chart-placeholder">Loading sales...</div>
+    <canvas id="monthly-sales-canvas" class="chart-placeholder" aria-label="Monthly sales chart" role="img"></canvas>
     </div>
 
     <div class="div4">
         <h2>Monthly Target + Order Cap</h2>
-        <div class="chart-placeholder">[Target vs Actual]</div>
+    <canvas id="target-vs-actual-canvas" class="chart-placeholder" aria-label="Target vs actual chart" role="img"></canvas>
     </div>
 
     <div class="div5">
@@ -83,7 +83,7 @@
 
     <div class="div-cart">
         <h2>Interested (In Cart)</h2>
-        <div class="stat-value">0</div>
+        <div class="stat-value">{{ in_cart_total|default:0 }}</div>
         <div id="recent-cart-activity" class="mt-2 text-sm">
             <p class="text-muted">No recent cart activity.</p>
         </div>
@@ -200,5 +200,14 @@
 {% endblock %}
 
 {% block scripts %}
+<!-- Chart.js (lightweight CDN) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // API endpoints used by the dashboard script
+    window.DASHBOARD_ENDPOINTS = {
+        stats: '{% url "hc_app:dashboard_stats" %}',
+        cart_activity: '{% url "hc_app:dashboard_cart_activity" %}'
+    };
+</script>
 <script src="{% static 'hc_app/scripts/dashboard.js' %}"></script>
 {% endblock %}

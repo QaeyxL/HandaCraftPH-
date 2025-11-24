@@ -44,6 +44,146 @@ window.fetchAndUpdateStats = async function(url) {
   }
 };
 
+// --- Live charts using Chart.js ---
+let monthlySalesChart = null;
+let targetVsActualChart = null;
+
+function buildMonthlySalesChart(ctx, labels = [], data = []) {
+  if (monthlySalesChart) {
+    monthlySalesChart.data.labels = labels;
+    monthlySalesChart.data.datasets[0].data = data;
+    monthlySalesChart.update();
+    return monthlySalesChart;
+  }
+  monthlySalesChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Sales',
+        data: data,
+        borderColor: '#1976d2',
+        backgroundColor: 'rgba(25,118,210,0.08)',
+        fill: true,
+        tension: 0.3,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true } }
+    }
+  });
+  return monthlySalesChart;
+}
+
+function buildTargetVsActualChart(ctx, target = 1000, actual = 0) {
+  if (targetVsActualChart) {
+    targetVsActualChart.data.datasets[0].data = [actual, Math.max(0, target - actual)];
+    targetVsActualChart.update();
+    return targetVsActualChart;
+  }
+  targetVsActualChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: ['Actual', 'Remaining to target'],
+      datasets: [{
+        data: [actual, Math.max(0, target - actual)],
+        backgroundColor: ['#33a02c', '#e0e0e0']
+      }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
+  return targetVsActualChart;
+}
+
+async function fetchDashboardStats(categoryId) {
+  try {
+    const base = (window.DASHBOARD_ENDPOINTS && window.DASHBOARD_ENDPOINTS.stats) || '/dashboard/stats/';
+    const url = categoryId ? `${base}?category=${encodeURIComponent(categoryId)}` : base;
+    const res = await fetch(url, { cache: 'no-store' });
+    if (!res.ok) throw new Error('stats fetch failed ' + res.status);
+    const json = await res.json();
+
+    // update stat panels
+    updateStats(json);
+
+    // monthly sales: views return monthly_sales: [{year, month, total}, ...]
+    const monthly = json.monthly_sales || [];
+    const labels = monthly.map(m => `${m.year}-${String(m.month).padStart(2,'0')}`);
+    const data = monthly.map(m => Number(m.total || 0));
+    const msCtx = document.getElementById('monthly-sales-canvas');
+    if (msCtx) buildMonthlySalesChart(msCtx.getContext('2d'), labels, data);
+
+    // target vs actual: naive target = average of highest 3 months * 1.2 or fixed
+    let target = 1000;
+    if (data.length) {
+      const top = data.slice().sort((a,b)=>b-a).slice(0,3);
+      const avgTop = top.reduce((s,v)=>s+v,0)/Math.max(1,top.length);
+      target = Math.round(avgTop * 1.2);
+    }
+    const actual = data.reduce((s,v)=>s+v,0);
+    const tvCtx = document.getElementById('target-vs-actual-canvas');
+    if (tvCtx) buildTargetVsActualChart(tvCtx.getContext('2d'), target, actual);
+
+    // inCartTotal update (if present in payload)
+    if (json.inCartTotal != null) {
+      const cartEl = document.querySelector('.div-cart .stat-value');
+      if (cartEl) animateValue(cartEl, Number(json.inCartTotal));
+    }
+
+  } catch (e) {
+    console.warn('fetchDashboardStats error', e);
+  }
+}
+
+async function fetchCartActivity() {
+  try {
+    const base = (window.DASHBOARD_ENDPOINTS && window.DASHBOARD_ENDPOINTS.cart_activity) || '/dashboard/cart-activity/';
+    const res = await fetch(base, { cache: 'no-store' });
+    if (!res.ok) throw new Error('cart activity fetch failed ' + res.status);
+    const json = await res.json();
+    const list = document.getElementById('recent-cart-activity');
+    if (!list) return;
+    const items = (json.cart_activity || []).slice(0,6);
+    if (!items.length) {
+      list.innerHTML = '<p class="text-muted">No recent cart activity.</p>';
+      return;
+    }
+    const html = items.map(it=>`<div class="small mb-1"><strong>${it.buyer_username}</strong> added <em>${it.product_name}</em> x ${it.quantity}</div>`).join('');
+    list.innerHTML = html;
+  } catch (e) {
+    console.warn('fetchCartActivity error', e);
+  }
+}
+
+// Polling + initial load
+function startDashboardLivePolling() {
+  // initial category selection
+  const catSelect = document.getElementById('dashboard-category');
+  const currentCat = catSelect ? catSelect.value : '';
+  fetchDashboardStats(currentCat);
+  fetchCartActivity();
+
+  // poll every 10 seconds
+  setInterval(()=>{
+    const cat = catSelect ? catSelect.value : '';
+    fetchDashboardStats(cat);
+    fetchCartActivity();
+  }, 10000);
+
+  if (catSelect) {
+    catSelect.addEventListener('change', ()=>{
+      fetchDashboardStats(catSelect.value);
+    });
+  }
+}
+
+// Start after DOM ready
+document.addEventListener('DOMContentLoaded', ()=>{
+  startDashboardLivePolling();
+});
+
 am5.ready(function() {
   try {
     var root = am5.Root.new("ph-map");
