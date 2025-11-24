@@ -157,6 +157,23 @@ def login_view(request):
         form = AuthenticationForm()
     return render(request, 'hc_app/login.html', {'form': form, 'quote': quote})
 
+
+# Explicit logout view to ensure consistent behavior across deployments.
+def logout_view(request):
+    """Log out the current user and redirect to the home page with a message.
+
+    Using an explicit view (instead of the class-based LogoutView) gives us
+    control and makes debugging simpler if a hosting environment blocks
+    the default view or requires a POST.
+    """
+    try:
+        auth_logout(request)
+    except Exception:
+        # best-effort logout; continue to redirect
+        pass
+    messages.info(request, 'You have been logged out.')
+    return redirect('hc_app:home')
+
 # home_view is defined later with categories/products context — keep the consolidated version below
 
 @login_required
@@ -358,7 +375,13 @@ def category_view(request, category_id):
     # different ids. To ensure products linked to any duplicate category are
     # included, match by the category name (case-insensitive) as well as the
     # chosen Category instance.
-    products = Product.objects.filter(category__name__iexact=category.name)
+    # Include products that point to the exact Category instance OR any other
+    # Category rows that share the same name. This ensures products remain
+    # visible even when their `stock` is zero and when duplicate Category rows
+    # exist in the database.
+    products = Product.objects.filter(
+        Q(category=category) | Q(category__name__iexact=category.name)
+    )
     return render(request, 'hc_app/category_products.html', {'category': category, 'products': products})
 
 def categories_list(request):   # edit22 - added
@@ -367,9 +390,16 @@ def categories_list(request):   # edit22 - added
     categories = get_unique_categories()
     # prefetch products for the selected category ids to avoid N+1 when templates access products
     # build mapping by id
-    prefetch_qs = Category.objects.filter(id__in=[c.id for c in categories]).prefetch_related('product_set')
+    prefetch_qs = Category.objects.filter(id__in=[c.id for c in categories])
     cat_map = {c.id: c for c in prefetch_qs}
     ordered = [cat_map[c.id] for c in categories if c.id in cat_map]
+
+    # Attach a preview_products attribute to each category that includes products
+    # linked to any Category row with the same name. This ensures previews show
+    # even when products reference duplicate Category rows.
+    for c in ordered:
+        c.preview_products = Product.objects.filter(category__name__iexact=c.name)[:5]
+
     return render(request, "hc_app/categories.html", {"categories": ordered})
 
 def home_view(request):
@@ -463,7 +493,12 @@ def category_products(request, category_name):
             if getattr(settings, 'CANONICALIZE_CATEGORY_SLUGS', True):
                 return redirect('hc_app:category_products', category_name=category.slug)
 
-    products = Product.objects.filter(category=category)
+    # Include products that reference this Category instance or any Category
+    # with the same name. This prevents products from being omitted when
+    # duplicate Category rows exist or when stock is zero.
+    products = Product.objects.filter(
+        Q(category=category) | Q(category__name__iexact=category.name)
+    )
     return render(
         request,
         'hc_app/category_products.html',

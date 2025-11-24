@@ -44,6 +44,7 @@
       <p>{{ product.description }}</p>
 
       <!-- Add to cart -->
+      {% if product.stock|default:0 > 0 %}
       <form method="post" action="{% url 'hc_app:add_to_cart' product.id %}" class="add-to-cart-form mt-3" data-product-id="{{ product.id }}">
         {% csrf_token %}
         <div class="input-group mb-2" style="max-width:160px">
@@ -52,6 +53,12 @@
         </div>
         <input type="hidden" name="customization" id="customization-data">
       </form>
+      {% else %}
+        <div class="mt-3">
+          <span class="badge bg-danger">Out of stock</span>
+          <p class="text-muted small mt-2">This item is currently out of stock and cannot be added to the cart.</p>
+        </div>
+      {% endif %}
 
       <!-- Customization panel -->
       <div id="customization-panel" class="mt-3" data-product-id="{{ product.id }}">

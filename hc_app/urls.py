@@ -49,7 +49,8 @@ urlpatterns = [
     path('demo/login-admin/', views.demo_login_admin, name='demo_login_admin'),
     path("dashboard/message/<int:user_id>/", views.message_user, name="message_user"),   # edit22 - added
     path('checkout/', views.checkout_view, name='checkout'),
-    path('logout/', auth_views.LogoutView.as_view(next_page=reverse_lazy('hc_app:home')), name='logout'),
+    # Use our explicit logout view to ensure consistent behavior across hosts
+    path('logout/', views.logout_view, name='logout'),
     path('account/delete/', views.delete_account, name='delete_account'),
     path('account/delete/confirm/<str:token>/', views.delete_confirm_account, name='delete_confirm_account'),
     path('account/deactivate/', views.deactivate_account, name='deactivate_account'),
