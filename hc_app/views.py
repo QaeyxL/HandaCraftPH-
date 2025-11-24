@@ -452,6 +452,13 @@ def debug_status(request):
 @login_required
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, id=product_id)
+    # Server-side stock protection: refuse to add if stock is zero or negative.
+    if hasattr(product, 'stock') and product.stock <= 0:
+        # If AJAX request, return JSON error so client-side can show it without redirect.
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'error': 'Product is out of stock.'}, status=400)
+        messages.error(request, 'Product is out of stock and cannot be added to the cart.')
+        return redirect('hc_app:product_detail', pk=product.id)
     # Accept optional customization JSON (from product page customizer)
     customization = None
     item_price = None
