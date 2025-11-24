@@ -1,8 +1,10 @@
 # HandaCraftPH
 
 ## Project Tree
+
 ```
 HandaCraftPH-
+├─ .coverage
 ├─ client
 │  └─ scripts
 │     └─ dashboard.js
@@ -24,6 +26,9 @@ HandaCraftPH-
 │  ├─ apps.py
 │  ├─ context_processors.py
 │  ├─ forms.py
+│  ├─ management
+│  │  └─ commands
+│  │     └─ geocode_profiles.py
 │  ├─ migrations
 │  │  ├─ 0001_initial.py
 │  │  ├─ 0002_category.py
@@ -42,24 +47,40 @@ HandaCraftPH-
 │  │  ├─ 0015_product_seller_city_product_seller_country_and_more.py
 │  │  ├─ 0016_remove_order_shipping_label_url_and_more.py
 │  │  ├─ 0017_quote.py
+│  │  ├─ 0018_attribute_cartitem_customization_cartitem_item_price_and_more.py
 │  │  └─ __init__.py
 │  ├─ models.py
 │  ├─ products
 │  │  └─ media
+│  ├─ signals.py
 │  ├─ static
 │  │  └─ hc_app
 │  │     ├─ dashboard.css
 │  │     ├─ images
 │  │     │  └─ logo.png
-│  │     └─ main.css
+│  │     ├─ main.css
+│  │     ├─ scripts
+│  │     │  ├─ admin_dashboard.js
+│  │     │  ├─ customizer.js
+│  │     │  └─ dashboard.js
+│  │     └─ vendor
+│  │        └─ README.txt
 │  ├─ templates
 │  │  └─ hc_app
+│  │     ├─ admin_dashboard.html
 │  │     ├─ base.html
 │  │     ├─ cart.html
 │  │     ├─ catalog.html
+│  │     ├─ categories.html
 │  │     ├─ category_products.html
 │  │     ├─ checkout.html
+│  │     ├─ confirm_deactivate_account.html
+│  │     ├─ confirm_delete_account.html
+│  │     ├─ customize.html
 │  │     ├─ dashboard.html
+│  │     ├─ delete_confirmed.html
+│  │     ├─ delete_request_sent.html
+│  │     ├─ demo_setup.html
 │  │     ├─ home.html
 │  │     ├─ index.html
 │  │     ├─ login.html
@@ -71,7 +92,8 @@ HandaCraftPH-
 │  │     ├─ product_detail.html
 │  │     ├─ register.html
 │  │     ├─ search_results.html
-│  │     └─ sell.html
+│  │     ├─ sell.html
+│  │     └─ workflow_edit.html
 │  ├─ templatetags
 │  │  ├─ mul_filters.py
 │  │  └─ __init__.py
@@ -149,9 +171,17 @@ API uses OpenStreetMap data. This is used to verify and/or suggest addresses to 
 
 ## List of Implemented Features
 - **User Login**
+  A user can be a seller and a buyer without needing separate accounts for it. They must make an account to access HandaCraftPH. 
+
 - **Catalog and Search**
+  Products are filtered by their category. If a user wishes to search for a specific product, they can use the search bar and the links for the product will be shown to them. 
+
 - **Seller Dashboard**
-- **Checkout and Payment**
+
+
+- **Checkout and Payment** 
+  The user will enter their location credentials with the help of Nominatim API that can recommend them verified addresses. For orders that are from or to the United States of America, the EasyPost API will provide rates and is converted into PHP (Philippine Peso). For orders that are from or to any point in the Philippines, a flat rate of Php 100 is set.
+
 - **Messaging System**
 
 
