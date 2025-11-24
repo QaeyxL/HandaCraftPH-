@@ -154,7 +154,7 @@ body.cart .checkout-button:hover {
                 <span class="quantity-value">{{ item.quantity }}</span>
                 <button class="increase-qty">+</button>
             </div>
-            <div class="item-subtotal">₱{{ (item.item_price|default:item.product.price)|mul:item.quantity|floatformat:2 }}</div>
+            <div class="item-subtotal">₱{{ item.item_price|default:item.product.price|mul:item.quantity|floatformat:2 }}</div>
             <div class="actions">
                 <form method="POST" action="{% url 'hc_app:remove_from_cart' item.id %}">
                     {% csrf_token %}
