@@ -3,8 +3,12 @@ from .models import Category   # edit22 - added
 from .utils import get_unique_categories
 
 def cart_item_count(request):
-    if request.user.is_authenticated:
-        return {'cart_count': CartItem.objects.filter(user=request.user).count()}
+    try:
+        if request.user.is_authenticated:
+            return {'cart_count': CartItem.objects.filter(user=request.user).count()}
+    except Exception:
+        # If DB or model lookup fails, fall back to zero so templates still render.
+        return {'cart_count': 0}
     return {'cart_count': 0}
 
 def user_profile(request):
@@ -14,8 +18,13 @@ def user_profile(request):
     return {'user_profile': None}
 
 def categories_processor(request):   # edit22 - added
-    # Use de-duplicated categories to avoid repeated names in menus
-    return {"categories": get_unique_categories()}
+    # Use de-duplicated categories to avoid repeated names in menus.
+    # Wrap in try/except to avoid breaking every request if DB is unreachable.
+    try:
+        categories = get_unique_categories() or []
+    except Exception:
+        categories = []
+    return {"categories": categories}
 
 
 def is_seller_processor(request):

@@ -412,6 +412,43 @@ def home_view(request):
         'featured_products': featured_products
     })
 
+
+def debug_status(request):
+    """Return simple JSON with counts for quick debugging of categories/cart.
+
+    Intended as a temporary helper to diagnose why categories or cart look empty
+    in a deployment. Not intended for production use.
+    """
+    from django.http import JsonResponse
+    try:
+        cat_count = Category.objects.count()
+        category_names = list(Category.objects.values_list('name', flat=True)[:50])
+    except Exception as e:
+        cat_count = None
+        category_names = []
+
+    try:
+        prod_count = Product.objects.count()
+    except Exception:
+        prod_count = None
+
+    cart_count = None
+    try:
+        if request.user.is_authenticated:
+            cart_count = CartItem.objects.filter(user=request.user).count()
+        else:
+            cart_count = 0
+    except Exception:
+        cart_count = None
+
+    return JsonResponse({
+        'categories_count': cat_count,
+        'categories_sample': category_names,
+        'products_count': prod_count,
+        'user_authenticated': request.user.is_authenticated,
+        'cart_count': cart_count,
+    })
+
 @login_required
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, id=product_id)
@@ -521,9 +558,17 @@ def my_listings(request):
     products = Product.objects.filter(seller=request.user)
     return render(request, 'hc_app/my_listings.html', {'products': products})
 
-@login_required
 def cart_view(request):
-    cart_items = CartItem.objects.filter(user=request.user)
+    """Show the cart. Allow anonymous users to view an empty cart and prompt to log in.
+
+    Previously this view required login; making it public avoids confusing redirects
+    when users click the Cart icon. For anonymous users we show an empty cart and
+    a message encouraging sign-in.
+    """
+    if request.user.is_authenticated:
+        cart_items = CartItem.objects.filter(user=request.user)
+    else:
+        cart_items = []
 
     total = 0
     for item in cart_items:

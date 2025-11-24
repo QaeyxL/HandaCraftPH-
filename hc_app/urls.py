@@ -51,6 +51,7 @@ urlpatterns = [
     path('checkout/', views.checkout_view, name='checkout'),
     # Use our explicit logout view to ensure consistent behavior across hosts
     path('logout/', views.logout_view, name='logout'),
+    path('debug/status/', views.debug_status, name='debug_status'),
     path('account/delete/', views.delete_account, name='delete_account'),
     path('account/delete/confirm/<str:token>/', views.delete_confirm_account, name='delete_confirm_account'),
     path('account/deactivate/', views.deactivate_account, name='deactivate_account'),
