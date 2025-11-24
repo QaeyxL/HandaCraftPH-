@@ -49,6 +49,9 @@
                     </li>
                 <li><a href="#">Customize</a></li>
                 <li><a href="{% url 'hc_app:sell' %}">Sell</a></li>
+                {% if is_seller %}
+                <li><a href="{% url 'hc_app:dashboard' %}">Dashboard</a></li>
+                {% endif %}
             </ul>
         </nav>
 
@@ -57,8 +60,10 @@
                 <input type="text" name="q" placeholder="Search" value="{{ request.GET.q }}">
             </form>
             
+                {% if not user.is_authenticated %}
                 <a href="{% url 'hc_app:register' %}">Sign Up</a>
                 <a href="{% url 'hc_app:login' %}">Login</a>
+                {% endif %}
 
                 <a href="{% url 'hc_app:cart_view' %}">
                     🛒 Cart (<span id="cart-count">{{ cart_count }}</span>)
@@ -79,7 +84,12 @@
                     {% endif %}
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="{% url 'hc_app:orders' %}">My Orders</a></li>
+                    {% if is_seller %}
                     <li><a class="dropdown-item" href="{% url 'hc_app:dashboard' %}">Dashboard</a></li>
+                    <li><a class="dropdown-item" href="{% url 'hc_app:deactivate_account' %}">Deactivate Account</a></li>
+                    <li><a class="dropdown-item text-danger" href="{% url 'hc_app:delete_account' %}">Delete Account</a></li>
+                    {% endif %}
+                    <li><a class="dropdown-item" href="{% url 'hc_app:logout' %}">Logout</a></li>
                     <li><a class="dropdown-item" href="{% url 'hc_app:password_change' %}">Change Password</a></li>   <!-- edit22 - added -->
 
                     
@@ -122,13 +132,16 @@
             e.preventDefault();
             const productId = this.dataset.productId;
             const csrfToken = this.querySelector("[name=csrfmiddlewaretoken]").value;
+            const action = this.getAttribute('action') || this.dataset.action;
 
-            fetch(`/cart/add/${productId}/`, {
+            fetch(action, {
                 method: "POST",
                 headers: {
                 "X-CSRFToken": csrfToken,
-                "X-Requested-With": "XMLHttpRequest"
-                }
+                "X-Requested-With": "XMLHttpRequest",
+                "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"
+                },
+                body: `quantity=${encodeURIComponent(this.querySelector('[name=quantity]') ? this.querySelector('[name=quantity]').value : 1)}`
             })
             .then(response => response.json())
             .then(data => {

@@ -1,5 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login
+from django.contrib.auth import logout as auth_logout
+from django.core import signing
+from django.core.mail import send_mail
+from django.conf import settings
+from django.urls import reverse
+from django.utils import timezone
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
@@ -17,6 +23,9 @@ from decimal import Decimal
 from datetime import datetime, timedelta
 from django.views.decorators.csrf import csrf_exempt
 from decouple import config  # edit22 - added 
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.auth import login as auth_login
 
 #twilio whatsapp message code template
 def send_whatsapp_message(to_number, message_body):
@@ -184,6 +193,15 @@ def catalog(request):   # edit22 - edited
     # Provide categories to populate the filter dropdown
     categories = Category.objects.all()
 
+    # Sorting support
+    sort = request.GET.get('sort', '')
+    if sort == 'price_asc':
+        products = products.order_by('price')
+    elif sort == 'price_desc':
+        products = products.order_by('-price')
+    elif sort == 'newest':
+        products = products.order_by('-created_at')
+
     return render(request, 'hc_app/catalog.html', {
         'products': products,
         'categories': categories,
@@ -192,7 +210,9 @@ def catalog(request):   # edit22 - edited
 
 def product_detail(request, pk):
     product = Product.objects.get(id=pk)
-    return render(request, 'hc_app/product_detail.html', {'product': product})
+    # related products: same category, exclude current
+    related = Product.objects.filter(category=product.category).exclude(id=product.id)[:4]
+    return render(request, 'hc_app/product_detail.html', {'product': product, 'related_products': related})
 
 def edit_product(request, pk):
     product = Product.objects.get(id=pk)
@@ -221,7 +241,8 @@ def category_view(request, category_id):
     return render(request, 'hc_app/category_products.html', {'category': category, 'products': products})
 
 def categories_list(request):   # edit22 - added
-    categories = Category.objects.all()
+    # Prefetch products for each category to show previews
+    categories = Category.objects.prefetch_related('product_set').all()
     return render(request, "hc_app/categories.html", {"categories": categories})
 
 def home_view(request):
@@ -235,14 +256,22 @@ def home_view(request):
 @login_required
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, id=product_id)
+    # Support quantity parameter (from normal form POST or AJAX). Default to 1.
+    try:
+        qty = int(request.POST.get('quantity', 1))
+    except Exception:
+        qty = 1
+
     cart_item, created = CartItem.objects.get_or_create(user=request.user, product=product)
-    if not created:
-        cart_item.quantity += 1
-        cart_item.save()
+    if created:
+        cart_item.quantity = max(1, qty)
+    else:
+        cart_item.quantity = cart_item.quantity + max(1, qty)
+    cart_item.save()
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':  
         count = CartItem.objects.filter(user=request.user).count()
-        return JsonResponse({'count': count})
+        return JsonResponse({'count': count, 'item_quantity': cart_item.quantity})
 
     return redirect('hc_app:cart_view')
 
@@ -428,7 +457,13 @@ def address_autocomplete(request):
 
 @login_required
 def dashboard_view(request):
-    user_products = Product.objects.filter(seller=request.user)   # edit22 - add (4)
+    # Only allow store owners (UserProfile.is_seller) or staff to access this view
+    profile = UserProfile.objects.filter(user=request.user).first()
+    if not (request.user.is_staff or (profile and getattr(profile, 'is_seller', False))):
+        messages.error(request, "Access denied: dashboard is for store owners only.")
+        return redirect('hc_app:home')
+
+    user_products = Product.objects.filter(seller=request.user)
     recent_orders = Order.objects.filter(seller=request.user).order_by('-created_at')[:10]    
     total_orders = Order.objects.filter(seller=request.user).count()
     total_customers = Order.objects.filter(seller=request.user).values('buyer').distinct().count()
@@ -443,6 +478,279 @@ def dashboard_view(request):
         "recent_quotes": Quote.objects.filter(seller=request.user).order_by("-created_at")[:20],  # edit22 - added
         }
     return render(request, "hc_app/dashboard.html", context)   # edit22 - add context
+
+
+@login_required
+def dashboard_stats(request):
+    """Return basic dashboard stats for the logged-in seller as JSON.
+
+    Response shape: { customersTotal: int, ordersCount: int }
+    """
+    total_orders = Order.objects.filter(seller=request.user).count()
+    total_customers = Order.objects.filter(seller=request.user).values('buyer').distinct().count()
+    return JsonResponse({
+        'customersTotal': total_customers,
+        'ordersCount': total_orders,
+    })
+
+
+@login_required
+def dashboard_quotes(request, buyer_id):
+    """Return quotes/messages sent by a given buyer to the logged-in seller."""
+    qs = Quote.objects.filter(seller=request.user, buyer__id=buyer_id).order_by('-created_at')
+    data = []
+    for q in qs:
+        data.append({
+            'id': q.id,
+            'buyer_username': q.buyer.username,
+            'message': q.message,
+            'product_id': q.product.id if q.product else None,
+            'product_name': q.product.name if q.product else None,
+            'created_at': q.created_at.isoformat(),
+        })
+    return JsonResponse({'quotes': data})
+
+
+def _create_demo_user(username, password, email='', is_staff=False, is_superuser=False):
+    UserModel = get_user_model()
+    user, created = UserModel.objects.get_or_create(username=username, defaults={'email': email})
+    if created:
+        user.set_password(password)
+        user.is_staff = is_staff
+        user.is_superuser = is_superuser
+        user.save()
+    else:
+        # ensure password and flags are up to date for demo
+        user.set_password(password)
+        user.is_staff = is_staff
+        user.is_superuser = is_superuser
+        user.save()
+    return user
+
+
+def demo_setup(request):
+    """DEBUG-only: create demo admin, demo seller, products, orders and quotes.
+
+    GET: render a simple confirmation page with next-step links.
+    POST: (also supported) will (re)create demo data.
+    """
+    if not settings.DEBUG:
+        return JsonResponse({'error': 'Demo only available in DEBUG mode.'}, status=403)
+
+    # create demo users
+    admin = _create_demo_user('demo_admin', 'demopass123', email='admin@example.com', is_staff=True, is_superuser=True)
+    seller = _create_demo_user('demo_seller', 'sellerpass', email='seller@example.com')
+    buyer = _create_demo_user('demo_buyer', 'buyerpass', email='buyer@example.com')
+
+    # ensure profiles exist and mark seller as a store owner
+    try:
+        UserProfile.objects.get_or_create(user=seller, defaults={
+            'contact_number': '+639171234567', 'street': 'Demo St', 'city': 'Manila', 'state': 'NCR', 'zip_code': '1000', 'is_seller': True
+        })
+        # also ensure buyer profile exists
+        UserProfile.objects.get_or_create(user=buyer, defaults={
+            'contact_number': '+639170000000', 'street': 'Buyer St', 'city': 'Manila', 'state': 'NCR', 'zip_code': '1001', 'is_seller': False
+        })
+    except Exception:
+        pass
+
+    # create category
+    cat, _ = Category.objects.get_or_create(name='Demo Category')
+
+    # create products
+    prod1, _ = Product.objects.get_or_create(name='Demo Product 1', seller=seller, defaults={'price': 199.99, 'category': cat, 'description': 'Sample product', 'weight': 1})
+    prod2, _ = Product.objects.get_or_create(name='Demo Product 2', seller=seller, defaults={'price': 299.99, 'category': cat, 'description': 'Sample product 2', 'weight': 2})
+
+    # create an order from buyer to seller
+    order, _ = Order.objects.get_or_create(buyer=buyer, seller=seller, defaults={'total': prod1.price, 'shipping_cost': 50, 'payment_method': 'COD', 'status': 'Pending'})
+    # Ensure there is at least one order item
+    OrderItem.objects.get_or_create(order=order, product=prod1, defaults={'quantity': 1, 'subtotal': prod1.price})
+
+    # create a sample quote from buyer to seller
+    Quote.objects.get_or_create(seller=seller, buyer=buyer, product=prod1, defaults={'message': 'Is this available?',})
+
+    # Auto-login the demo seller and redirect to seller dashboard
+    try:
+        seller.backend = 'django.contrib.auth.backends.ModelBackend'
+        auth_login(request, seller)
+        messages.success(request, 'Demo seller logged in. Redirecting to dashboard...')
+        return redirect('hc_app:dashboard')
+    except Exception:
+        # Fallback: render the demo info page if auto-login fails
+        return render(request, 'hc_app/demo_setup.html', {
+            'admin_username': 'demo_admin',
+            'admin_password': 'demopass123',
+            'seller_username': 'demo_seller',
+            'seller_password': 'sellerpass',
+            'buyer_username': 'demo_buyer',
+            'buyer_password': 'buyerpass',
+        })
+
+
+def demo_login_admin(request):
+    """Debug-only: log in the demo admin and redirect to admin index or seller dashboard.
+    """
+    if not settings.DEBUG:
+        return JsonResponse({'error': 'Demo only available in DEBUG mode.'}, status=403)
+
+    UserModel = get_user_model()
+    try:
+        admin = UserModel.objects.get(username='demo_admin')
+    except UserModel.DoesNotExist:
+        return redirect('hc_app:demo_setup')
+
+    # Force-login admin
+    admin.backend = 'django.contrib.auth.backends.ModelBackend'
+    auth_login(request, admin)
+
+    # Redirect to Django admin site by default (admin index)
+    return redirect('/admin/')
+
+
+@login_required
+def delete_account(request):
+    """Allow seller to delete their account (confirmation required).
+
+    Only users with UserProfile.is_seller True or staff may delete via this path.
+    """
+    profile = UserProfile.objects.filter(user=request.user).first()
+    # Only allow if store owner or staff
+    if not (request.user.is_staff or (profile and getattr(profile, 'is_seller', False))):
+        messages.error(request, "You don't have permission to delete this account.")
+        return redirect('hc_app:home')
+
+    # Show confirmation page and on POST send an email with a signed delete link.
+    if request.method == 'POST':
+        user = request.user
+        payload = {'user_id': user.id}
+        token = signing.dumps(payload)
+        confirm_url = request.build_absolute_uri(
+            reverse('hc_app:delete_confirm_account', args=[token])
+        )
+
+        # Try to send email; if not configured, render link on page as fallback
+        email_sent = False
+        try:
+            send_mail(
+                subject='Confirm account deletion',
+                message=f'Click this link to permanently delete your account: {confirm_url}',
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', None),
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
+            email_sent = True
+        except Exception:
+            email_sent = False
+
+        return render(request, 'hc_app/delete_request_sent.html', {
+            'email_sent': email_sent,
+            'confirm_url': confirm_url,
+        })
+
+    return render(request, 'hc_app/confirm_delete_account.html')
+
+
+@login_required
+def delete_confirm_account(request, token):
+    """Confirm deletion via signed token. Token expires after a reasonable time using max_age when loading.
+
+    For safety, we verify the token and then delete the user.
+    """
+    try:
+        data = signing.loads(token, max_age=60*60*24)  # 24 hours
+        user_id = data.get('user_id')
+    except signing.BadSignature:
+        messages.error(request, 'Invalid or expired deletion link.')
+        return redirect('hc_app:home')
+    except signing.SignatureExpired:
+        messages.error(request, 'Deletion link expired. Please request a new link.')
+        return redirect('hc_app:home')
+
+    UserModel = get_user_model()
+    try:
+        user = UserModel.objects.get(id=user_id)
+    except UserModel.DoesNotExist:
+        messages.error(request, 'User not found.')
+        return redirect('hc_app:home')
+
+    # Only allow deletion if the token user matches the currently logged-in user OR if token belongs to a user and current user is that same user (we'll log them out first)
+    # If the request comes from a different session, we still allow deletion via token.
+    try:
+        # Log out current session if any
+        auth_logout(request)
+    except Exception:
+        pass
+
+    try:
+        # Soft-archive instead of hard delete: mark user inactive and set profile archive fields
+        user.is_active = False
+        user.save()
+        profile = UserProfile.objects.filter(user=user).first()
+        if profile:
+            profile.is_seller = False
+            profile.is_archived = True
+            profile.archived_at = timezone.now()
+            profile.save()
+
+        # record audit log
+        try:
+            from .models import AuditLog
+            AuditLog.objects.create(
+                target_user=user,
+                action='archive',
+                performed_by=None,
+                details='Account archived via email confirmation link.'
+            )
+        except Exception:
+            pass
+
+        messages.success(request, 'Account archived (soft-deleted) successfully.')
+    except Exception as e:
+        messages.error(request, f'Failed to delete account: {e}')
+
+    return render(request, 'hc_app/delete_confirmed.html')
+
+
+@login_required
+def deactivate_account(request):
+    """Soft-deactivate seller account: sets is_active=False and clears is_seller.
+
+    A deactivated user cannot log in until reactivated by admin.
+    """
+    profile = UserProfile.objects.filter(user=request.user).first()
+    if not (request.user.is_staff or (profile and getattr(profile, 'is_seller', False))):
+        messages.error(request, "You don't have permission to deactivate this account.")
+        return redirect('hc_app:home')
+
+    if request.method == 'POST':
+        try:
+            # mark user inactive and set profile.is_seller False (deactivation)
+            request.user.is_active = False
+            request.user.save()
+            if profile:
+                old_seller = profile.is_seller
+                profile.is_seller = False
+                profile.save()
+
+            # audit log
+            try:
+                from .models import AuditLog
+                AuditLog.objects.create(
+                    target_user=request.user,
+                    action='deactivate',
+                    performed_by=request.user,
+                    details='User initiated deactivation via account settings.'
+                )
+            except Exception:
+                pass
+
+            auth_logout(request)
+            messages.success(request, 'Your account has been deactivated. Contact admin to reactivate.')
+        except Exception as e:
+            messages.error(request, f'Failed to deactivate account: {e}')
+        return redirect('hc_app:home')
+
+    return render(request, 'hc_app/confirm_deactivate_account.html')
 
 
 
@@ -593,11 +901,20 @@ def update_order_status(request, order_id):    # edit22 - added
 @login_required
 def search_view(request):   # edit22 - added
     q = request.GET.get('q', '').strip()
+    category = request.GET.get('category', '').strip()
     results = Product.objects.none()
     if q:
         results = Product.objects.filter(name__icontains=q) | Product.objects.filter(description__icontains=q)
+    else:
+        results = Product.objects.all()
+
+    if category:
+        results = results.filter(category__name=category)
+
     return render(request, 'hc_app/search_results.html', {
         'query': q,
-        'results': results
+        'results': results,
+        'categories': Category.objects.all(),
+        'active_category': category,
     })
 

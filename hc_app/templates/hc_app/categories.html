@@ -1,0 +1,38 @@
+{% extends "hc_app/base.html" %}
+{% block title %}Categories{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Categories</h2>
+    <div class="row">
+    {% for category in categories %}
+      <div class="col-md-4 mb-3">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title d-flex justify-content-between align-items-center">
+              <span>{{ category.name }}</span>
+              <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="collapse" data-bs-target="#cat-{{ category.id }}-items" aria-expanded="false">Show</button>
+            </h5>
+            <p class="card-text">{{ category.description|default:"" }}</p>
+            <div id="cat-{{ category.id }}-items" class="collapse">
+              <ul class="list-unstyled">
+                {% for p in category.product_set.all|slice:":5" %}
+                  <li><a href="{% url 'hc_app:product_detail' p.id %}">{{ p.name }}</a></li>
+                {% empty %}
+                  <li class="text-muted">No products in this category.</li>
+                {% endfor %}
+              </ul>
+            </div>
+            <div class="d-flex gap-2 mt-2">
+              <a href="{% url 'hc_app:category_products' category.name %}" class="btn btn-sm btn-primary">View products</a>
+              <a href="{% url 'hc_app:catalog' %}?category={{ category.name }}" class="btn btn-sm btn-outline-secondary">Filter catalog</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p>No categories yet.</p>
+    {% endfor %}
+    </div>
+</div>
+{% endblock %}

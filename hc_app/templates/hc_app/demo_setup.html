@@ -1,0 +1,20 @@
+{% extends 'hc_app/base.html' %}
+{% load static %}
+{% block title %}Demo Setup{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h1>Demo Data Created</h1>
+  <p>The demo data has been created (only in DEBUG mode).</p>
+  <ul>
+    <li>Admin: <strong>{{ admin_username }}</strong> / <code>{{ admin_password }}</code></li>
+    <li>Seller: <strong>{{ seller_username }}</strong> / <code>{{ seller_password }}</code></li>
+    <li>Buyer: <strong>{{ buyer_username }}</strong> / <code>{{ buyer_password }}</code></li>
+  </ul>
+  <p>
+    <a class="btn btn-primary" href="/admin/">Go to Django Admin</a>
+    <a class="btn btn-secondary" href="{% url 'hc_app:dashboard' %}">Open Seller Dashboard</a>
+    <a class="btn btn-outline-secondary" href="/">Open Storefront</a>
+  </p>
+</div>
+{% endblock %}

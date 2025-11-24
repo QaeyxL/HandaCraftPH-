@@ -1,0 +1,15 @@
+{% extends 'hc_app/base.html' %}
+{% block title %}Deletion Requested{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Deletion Requested</h2>
+  {% if email_sent %}
+    <p>We sent an email with a confirmation link to your address. Please check your inbox to confirm account deletion.</p>
+  {% else %}
+    <p class="text-warning">Email sending is not configured. Use the link below to confirm deletion (for demo/testing only):</p>
+    <pre>{{ confirm_url }}</pre>
+  {% endif %}
+  <a href="{% url 'hc_app:home' %}" class="btn btn-secondary mt-2">Back to Home</a>
+</div>
+{% endblock %}

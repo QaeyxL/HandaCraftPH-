@@ -15,6 +15,12 @@
         </option>
       {% endfor %}
     </select>
+    <select name="sort" class="form-select" onchange="this.form.submit()">
+      <option value="">Sort by</option>
+      <option value="newest" {% if request.GET.sort == 'newest' %}selected{% endif %}>Newest</option>
+      <option value="price_asc" {% if request.GET.sort == 'price_asc' %}selected{% endif %}>Price: Low → High</option>
+      <option value="price_desc" {% if request.GET.sort == 'price_desc' %}selected{% endif %}>Price: High → Low</option>
+    </select>
     {% if active_category %}
       <a class="btn btn-outline-secondary" href="{% url 'hc_app:catalog' %}">Clear</a>
     {% endif %}

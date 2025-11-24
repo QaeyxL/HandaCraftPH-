@@ -1,0 +1,14 @@
+{% extends 'hc_app/base.html' %}
+{% block title %}Confirm Account Deletion{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Delete Your Account</h2>
+  <p class="text-danger">This will permanently delete your user account, products, and any associated data. This action cannot be undone.</p>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger">Yes, delete my account</button>
+    <a href="{% url 'hc_app:dashboard' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}

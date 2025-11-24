@@ -33,8 +33,16 @@ urlpatterns = [
     path("quote/send/<int:seller_id>/<int:product_id>/", views.send_quote, name="send_quote_with_product"),   # edit22 - added
     path("quote/send/<int:seller_id>/", views.send_quote, name="send_quote"),   # edit22 - added
     path('dashboard/', views.dashboard_view, name='dashboard'),
+    path('dashboard/stats/', views.dashboard_stats, name='dashboard_stats'),
+    path('dashboard/quotes/<int:buyer_id>/', views.dashboard_quotes, name='dashboard_quotes'),
+    path('demo/setup/', views.demo_setup, name='demo_setup'),
+    path('demo/login-admin/', views.demo_login_admin, name='demo_login_admin'),
     path("dashboard/message/<int:user_id>/", views.message_user, name="message_user"),   # edit22 - added
     path('checkout/', views.checkout_view, name='checkout'),
+    path('logout/', auth_views.LogoutView.as_view(next_page=reverse_lazy('hc_app:home')), name='logout'),
+    path('account/delete/', views.delete_account, name='delete_account'),
+    path('account/delete/confirm/<str:token>/', views.delete_confirm_account, name='delete_confirm_account'),
+    path('account/deactivate/', views.deactivate_account, name='deactivate_account'),
     path('ajax/address-suggestions/', views.address_suggestions, name='address_suggestions'),
     path('address-autocomplete/', views.address_autocomplete, name='address_autocomplete'),
     path('place_order/', views.place_order, name='place_order'),

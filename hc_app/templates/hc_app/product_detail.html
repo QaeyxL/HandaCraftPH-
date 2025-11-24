@@ -5,11 +5,34 @@
 <div class="container mt-4">
   <div class="row">
     <div class="col-md-6">
-      {% with img=product.images.first %}
-        {% if img %}
-          <img src="{{ img.image.url }}" class="img-fluid" alt="{{ product.name }}">
+      {% with images=product.images.all %}
+        {% if images.count > 0 %}
+          <div id="productCarousel{{ product.id }}" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+              {% for img in images %}
+                <button type="button" data-bs-target="#productCarousel{{ product.id }}" data-bs-slide-to="{{ forloop.counter0 }}" {% if forloop.first %}class="active" aria-current="true"{% endif %} aria-label="Slide {{ forloop.counter }}"></button>
+              {% endfor %}
+            </div>
+            <div class="carousel-inner">
+              {% for img in images %}
+                <div class="carousel-item {% if forloop.first %}active{% endif %}">
+                  <img src="{{ img.image.url }}" class="d-block w-100" alt="{{ product.name }}">
+                </div>
+              {% endfor %}
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel{{ product.id }}" data-bs-slide="prev">
+              <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+              <span class="visually-hidden">Previous</span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#productCarousel{{ product.id }}" data-bs-slide="next">
+              <span class="carousel-control-next-icon" aria-hidden="true"></span>
+              <span class="visually-hidden">Next</span>
+            </button>
+          </div>
         {% elif product.image %}
           <img src="{{ product.image.url }}" class="img-fluid" alt="{{ product.name }}">
+        {% else %}
+          <img src="{% static 'hc_app/images/placeholder.png' %}" class="img-fluid" alt="No image">
         {% endif %}
       {% endwith %}
     </div>
@@ -20,13 +43,57 @@
       <h4>₱{{ product.price }}</h4>
       <p>{{ product.description }}</p>
 
+      <!-- Add to cart -->
+      <form method="post" action="{% url 'hc_app:add_to_cart' product.id %}" class="add-to-cart-form mt-3" data-product-id="{{ product.id }}">
+        {% csrf_token %}
+        <div class="input-group mb-2" style="max-width:160px">
+          <input type="number" name="quantity" class="form-control form-control-sm" value="1" min="1">
+          <button class="btn btn-success btn-sm" type="submit">Add to cart</button>
+        </div>
+      </form>
+
       <!-- Quote form -->
       <form method="post" action="{% url 'hc_app:send_quote_with_product' product.seller.id product.id %}" class="mt-3">
         {% csrf_token %}
         <textarea name="message" class="form-control" rows="3" placeholder="Send a quote to the seller" required></textarea>
         <button type="submit" class="btn btn-primary mt-2">Send Quote</button>
       </form>
+
+      <!-- Seller info -->
+      <div class="mt-4 border-top pt-3">
+        <h6>Sold by</h6>
+        <p><strong>{{ product.seller.username }}</strong></p>
+        <p>
+          <a href="{% url 'hc_app:message_user' product.seller.id %}" class="btn btn-outline-primary btn-sm">Message Seller</a>
+        </p>
+        <p class="text-muted small">Weight: {{ product.weight }} oz · Dimensions: {{ product.length }}×{{ product.width }}×{{ product.height }}</p>
+      </div>
     </div>
   </div>
+
+  {% if related_products %}
+  <hr>
+  <h5>Related products</h5>
+  <div class="row">
+    {% for p in related_products %}
+      <div class="col-md-3">
+        <div class="card mb-3">
+          {% with img=p.images.first %}
+            {% if img %}
+              <img src="{{ img.image.url }}" class="card-img-top" alt="{{ p.name }}">
+            {% elif p.image %}
+              <img src="{{ p.image.url }}" class="card-img-top" alt="{{ p.name }}">
+            {% endif %}
+          {% endwith %}
+          <div class="card-body p-2">
+            <h6 class="card-title">{{ p.name }}</h6>
+            <p class="card-text small">₱{{ p.price }}</p>
+            <a href="{% url 'hc_app:product_detail' p.id %}" class="btn btn-sm btn-outline-primary">View</a>
+          </div>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

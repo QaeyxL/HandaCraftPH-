@@ -12,6 +12,10 @@ class UserProfile(models.Model):
     state = models.CharField(max_length=100, blank=False)
     zip_code = models.CharField(max_length=20, blank=False)
     country = models.CharField(max_length=50, default='PH')
+    is_seller = models.BooleanField(default=False)
+    # soft-delete/archive flag
+    is_archived = models.BooleanField(default=False)
+    archived_at = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
         return self.user.username
@@ -78,4 +82,21 @@ class Quote(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+
+class AuditLog(models.Model):
+    ACTION_CHOICES = [
+        ('deactivate', 'Deactivate'),
+        ('archive', 'Archive'),
+        ('reactivate', 'Reactivate'),
+    ]
+
+    target_user = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='audit_logs')
+    action = models.CharField(max_length=32, choices=ACTION_CHOICES)
+    performed_by = models.ForeignKey(UserModel, on_delete=models.SET_NULL, null=True, blank=True, related_name='performed_audit_logs')
+    timestamp = models.DateTimeField(auto_now_add=True)
+    details = models.TextField(blank=True)
+
+    def __str__(self):
+        return f"{self.get_action_display()} -> {self.target_user.username} @ {self.timestamp.isoformat()}"
                                

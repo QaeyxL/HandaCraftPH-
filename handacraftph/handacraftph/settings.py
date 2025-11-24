@@ -72,6 +72,7 @@ TEMPLATES = [
                 'hc_app.context_processors.cart_item_count',
                 'hc_app.context_processors.user_profile',
                 'hc_app.context_processors.categories_processor',   # edit22 - added
+                'hc_app.context_processors.is_seller_processor',
             ],
         },
     },

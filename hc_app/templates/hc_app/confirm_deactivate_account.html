@@ -1,0 +1,14 @@
+{% extends 'hc_app/base.html' %}
+{% block title %}Confirm Deactivate Account{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Deactivate Your Account</h2>
+  <p class="text-warning">Deactivating will prevent you from signing in. Your products and data will remain but your store will be hidden. Contact admin to reactivate.</p>
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-warning">Yes, deactivate my account</button>
+    <a href="{% url 'hc_app:dashboard' %}" class="btn btn-secondary">Cancel</a>
+  </form>
+</div>
+{% endblock %}

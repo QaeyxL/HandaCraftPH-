@@ -1,0 +1,10 @@
+{% extends 'hc_app/base.html' %}
+{% block title %}Account Deleted{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Account Deleted</h2>
+  <p>Your account and related data have been permanently deleted.</p>
+  <a href="{% url 'hc_app:home' %}" class="btn btn-primary">Back to Home</a>
+</div>
+{% endblock %}

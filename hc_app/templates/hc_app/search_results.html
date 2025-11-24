@@ -1,12 +1,38 @@
 {% extends "hc_app/base.html" %}
 {% block title %}Search{% endblock %}
 {% block content %}
-<h2>Search results for "{{ query }}"</h2>
-<ul>
-  {% for product in results %}
-    <li><a href="{% url 'hc_app:product_detail' product.id %}">{{ product.name }}</a></li>
-  {% empty %}
-    <li>No results found.</li>
-  {% endfor %}
-</ul>
+<div class="container mt-4">
+  <h2>Search results{% if query %} for "{{ query }}"{% endif %}</h2>
+
+  <form method="get" class="mb-3 d-flex gap-2">
+    <input type="search" name="q" class="form-control" placeholder="Search" value="{{ query }}">
+    <select name="category" class="form-select" onchange="this.form.submit()">
+      <option value="">All categories</option>
+      {% for c in categories %}
+        <option value="{{ c.name }}" {% if active_category == c.name %}selected{% endif %}>{{ c.name }}</option>
+      {% endfor %}
+    </select>
+    <button class="btn btn-primary">Search</button>
+  </form>
+
+  <div class="row">
+    {% for product in results %}
+      <div class="col-md-4 mb-3">
+        <div class="card">
+          {% if product.image %}
+            <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+          {% endif %}
+          <div class="card-body">
+            <h5 class="card-title">{{ product.name }}</h5>
+            <p class="card-text">{{ product.description|truncatewords:20 }}</p>
+            <p class="card-text"><strong>₱{{ product.price }}</strong></p>
+            <a href="{% url 'hc_app:product_detail' product.id %}" class="btn btn-sm btn-outline-primary">View</a>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p>No results found.</p>
+    {% endfor %}
+  </div>
+</div>
 {% endblock %}
