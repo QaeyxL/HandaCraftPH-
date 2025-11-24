@@ -177,13 +177,13 @@ API uses OpenStreetMap data. This is used to verify and/or suggest addresses to 
   Products are filtered by their category. If a user wishes to search for a specific product, they can use the search bar and the links for the product will be shown to them. 
 
 - **Seller Dashboard**
-
+  The users has a dashboard page that shows the number of customers and orders of their products, monthly sales, customer demographics, order status update page, and listings.
 
 - **Checkout and Payment** 
   The user will enter their location credentials with the help of Nominatim API that can recommend them verified addresses. For orders that are from or to the United States of America, the EasyPost API will provide rates and is converted into PHP (Philippine Peso). For orders that are from or to any point in the Philippines, a flat rate of Php 100 is set.
 
 - **Messaging System**
-
+  The user will receive a message once their account has been made. The users can send messages to sellers through the dashboard page.
 
 
 ## 📸 Before/After Performance Screenshots
@@ -205,8 +205,6 @@ API uses OpenStreetMap data. This is used to verify and/or suggest addresses to 
   Some deployment platforms may require manual redeploys if auto-deploy is misconfigured.
 - **API rate limits not handled**  
   External APIs like Twilio and Quotable.io may fail silently if rate limits are exceeded.
-- **Minimal accessibility features**  
-  The site lacks ARIA labels and keyboard navigation enhancements for screen readers.
 - **Mobile responsiveness may vary**  
   While designed to be responsive, some layouts may break on smaller screens.
 - **EasyPost API**
