@@ -204,8 +204,9 @@ def catalog(request):   # edit22 - edited
         except (ValueError, TypeError):
             products = products.filter(Q(category__slug__iexact=category) | Q(category__name__iexact=category))
 
-    # Provide categories to populate the filter dropdown
-    categories = Category.objects.all()
+    # Provide categories to populate the filter dropdown (deduplicated)
+    from .utils import get_unique_categories
+    categories = get_unique_categories()
 
     # Sorting support
     sort = request.GET.get('sort', '')
@@ -356,12 +357,19 @@ def category_view(request, category_id):
     return render(request, 'hc_app/category_products.html', {'category': category, 'products': products})
 
 def categories_list(request):   # edit22 - added
-    # Prefetch products for each category to show previews
-    categories = Category.objects.prefetch_related('product_set').all()
-    return render(request, "hc_app/categories.html", {"categories": categories})
+    # Prefetch products for each category to show previews. Use unique categories helper
+    from .utils import get_unique_categories
+    categories = get_unique_categories()
+    # prefetch products for the selected category ids to avoid N+1 when templates access products
+    # build mapping by id
+    prefetch_qs = Category.objects.filter(id__in=[c.id for c in categories]).prefetch_related('product_set')
+    cat_map = {c.id: c for c in prefetch_qs}
+    ordered = [cat_map[c.id] for c in categories if c.id in cat_map]
+    return render(request, "hc_app/categories.html", {"categories": ordered})
 
 def home_view(request):
-    categories = Category.objects.all()
+    from .utils import get_unique_categories
+    categories = get_unique_categories()
     products = Product.objects.all()
     return render(request, 'hc_app/home.html', {
         'categories': categories,
@@ -771,6 +779,7 @@ def address_autocomplete(request):
 
 @login_required
 def dashboard_view(request):
+    from .utils import get_unique_categories
     user_products = Product.objects.filter(seller=request.user)   # edit22 - add (4)
     recent_orders = Order.objects.filter(seller=request.user).order_by('-created_at')[:10]    
     total_orders = Order.objects.filter(seller=request.user).count()
@@ -786,7 +795,7 @@ def dashboard_view(request):
         "users": User.objects.exclude(id=request.user.id),   # edit22 - added
         "recent_quotes": [],
         "statuses": statuses,  # edit22 - added
-        "categories": Category.objects.order_by('name').all(),
+    "categories": get_unique_categories(),
     }
     # Try to load recent quotes, but don't crash the whole view if the table is missing or DB errors occur.
     try:
@@ -991,7 +1000,8 @@ def dashboard_map_points(request):
 @staff_member_required
 def admin_dashboard(request):
     """Render a simple admin-facing dashboard that will fetch data via API dynamically."""
-    cats = Category.objects.order_by('name').all()
+    from .utils import get_unique_categories
+    cats = get_unique_categories()
     return render(request, 'hc_app/admin_dashboard.html', {'categories': cats})
 
 
@@ -1280,6 +1290,12 @@ def deactivate_account(request):
         return redirect('hc_app:home')
 
     if request.method == 'POST':
+        # require the posted confirm_username to match the logged-in username for safety
+        confirm_username = request.POST.get('confirm_username', '').strip()
+        if confirm_username != request.user.username:
+            messages.error(request, 'Deactivation cancelled: username confirmation did not match.')
+            return redirect('hc_app:home')
+
         try:
             # mark user inactive and set profile.is_seller False (deactivation)
             request.user.is_active = False
@@ -1400,10 +1416,11 @@ def search_view(request):   # edit22 - added
         except (ValueError, TypeError):
             results = results.filter(Q(category__slug__iexact=category) | Q(category__name__iexact=category))
 
+    from .utils import get_unique_categories
     return render(request, 'hc_app/search_results.html', {
         'query': q,
         'results': results,
-        'categories': Category.objects.all(),
+        'categories': get_unique_categories(),
         'active_category': category,
     })
 

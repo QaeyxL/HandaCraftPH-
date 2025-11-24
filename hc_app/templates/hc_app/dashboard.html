@@ -162,27 +162,19 @@
                 </div>
 
                 <div class="messages">
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
+                    {% if db_ok is defined and not db_ok %}
+                        <div class="alert alert-warning">Dashboard messages are unavailable because the database is not fully migrated on this environment. Please run migrations.</div>
+                    {% endif %}
+
                     {% for quote in recent_quotes %}
-                        <div class="chat-message">
+                        <div class="chat-message mb-2">
                             <div class="chat-message-header">
                                 <span class="chat-message-date">{{ quote.created_at|date:"F j, Y" }}</span>
                             </div>
                             <div class="chat-message-body">
-                                <p>{{ quote.message }}</p>
+                                <p><strong>{{ quote.buyer.username }}</strong>: {{ quote.message }}</p>
+                                <small class="text-muted">({{ quote.created_at|date:"Y-m-d H:i" }})</small>
                             </div>
-=======
-=======
->>>>>>> Stashed changes
-                    {% if db_ok is defined and not db_ok %}
-                        <div class="alert alert-warning">Dashboard messages are unavailable because the database is not fully migrated on this environment. Please run migrations.</div>
-                    {% endif %}
-                    {% for q in recent_quotes %}   <!-- edit22 - added -->
-                        <div class="mb-2">
-                        <strong>{{ q.buyer.username }}</strong>: {{ q.message }}
-                        <small class="text-muted">({{ q.created_at|date:"Y-m-d H:i" }})</small>
->>>>>>> Stashed changes
                         </div>
                     {% empty %}
                         <p>No quotes yet.</p>
@@ -222,5 +214,10 @@
             }
         })();
     </script>
+    <!-- amCharts 5: load core, map module, Philippines geodata and animated theme -->
+    <script src="https://cdn.amcharts.com/lib/5/index.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/map.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/geodata/philippinesLow.js"></script>
+    <script src="https://cdn.amcharts.com/lib/5/themes/Animated.js"></script>
     <script src="{% static 'hc_app/scripts/dashboard.js' %}"></script>
 {% endblock %}

@@ -56,9 +56,7 @@
             </ul>
         </nav>
 
-        <div class="sustainability-banner" style="background:#eefaf0;padding:10px 16px;border-radius:6px;margin:12px 0;">
-            <strong>Support Filipino craft:</strong> Discover locally sourced, sustainable materials — abaca, rattan, bamboo & handwoven textiles. <a href="{% url 'hc_app:categories_list' %}">Browse categories</a>
-        </div>
+        {# Sustainability banner removed per request: 'Support Filipino craft' text removed from header #}
 
         <div class="nav-actions">
             <form method="get" action="{% url 'hc_app:search' %}" class="d-inline">   <!-- edit22 - added -->
@@ -90,15 +88,21 @@
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="{% url 'hc_app:orders' %}">My Orders</a></li>
                     {% if is_seller %}
-                    <li><a class="dropdown-item" href="{% url 'hc_app:dashboard' %}">Dashboard</a></li>
-                    <li><a class="dropdown-item" href="{% url 'hc_app:deactivate_account' %}">Deactivate Account</a></li>
-                    <li><a class="dropdown-item text-danger" href="{% url 'hc_app:delete_account' %}">Delete Account</a></li>
+                        <li><a class="dropdown-item" href="{% url 'hc_app:dashboard' %}">Dashboard</a></li>
                     {% endif %}
+                    <!-- Place Change Password and Logout after orders/dashboard -->
+                    <li><a class="dropdown-item" href="{% url 'hc_app:password_change' %}">Change Password</a></li>
                     <li><a class="dropdown-item" href="{% url 'hc_app:logout' %}">Logout</a></li>
-                    <li><a class="dropdown-item" href="{% url 'hc_app:password_change' %}">Change Password</a></li>   <!-- edit22 - added -->
 
-                    
-                   
+                    {% if is_seller %}
+                        <li><hr class="dropdown-divider"></li>
+                        <!-- Open confirmation modal instead of linking directly -->
+                        <li>
+                            <button type="button" class="dropdown-item text-danger" data-bs-toggle="modal" data-bs-target="#deactivateModal">
+                                Deactivate Account
+                            </button>
+                        </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
@@ -128,6 +132,34 @@
     </footer>
 
     {% block scripts %}{% endblock %}
+    
+        {# Deactivate confirmation modal - shown when user clicks Deactivate Account in profile dropdown #}
+        <div class="modal fade" id="deactivateModal" tabindex="-1" aria-labelledby="deactivateModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="deactivateModalLabel">Confirm deactivation</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-2">Deactivating your account will make it inactive. You will be logged out and will not be able to sign in until an administrator reactivates your account. This action can be reversed by admins but not from the user interface.</p>
+                        <p class="text-muted small">To confirm, type your username below and click <strong>Deactivate</strong>.</p>
+                        <div class="mb-2">
+                            <label for="deactivate-confirm-input" class="form-label small">Type your username to confirm</label>
+                            <input id="deactivate-confirm-input" name="confirm_username" type="text" class="form-control" placeholder="{{ user.username }}">
+                            <div id="deactivate-help" class="form-text small text-muted">Username must match exactly.</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <form id="deactivate-form" method="post" action="{% url 'hc_app:deactivate_account' %}" style="display:inline">
+                {% csrf_token %}
+                <button id="deactivate-confirm-btn" type="submit" class="btn btn-danger" disabled>Deactivate</button>
+            </form>
+                    </div>
+                </div>
+            </div>
+        </div>
     <script>
         document.addEventListener("DOMContentLoaded", function() {
         const forms = document.querySelectorAll(".add-to-cart-form");
@@ -156,6 +188,32 @@
             });
         });
         });
+</script>
+<script>
+    // Deactivate confirmation: enable submit only when typed username matches current user
+    document.addEventListener('DOMContentLoaded', function () {
+        const input = document.getElementById('deactivate-confirm-input');
+        const btn = document.getElementById('deactivate-confirm-btn');
+        if (!input || !btn) return;
+        const expected = "{{ user.username|escapejs }}";
+        function check() {
+            const val = (input.value || '').trim();
+            if (val === expected) {
+                btn.disabled = false;
+            } else {
+                btn.disabled = true;
+            }
+        }
+        input.addEventListener('input', check);
+        // optional: clear on modal hide
+        const modalEl = document.getElementById('deactivateModal');
+        if (modalEl) {
+            modalEl.addEventListener('hidden.bs.modal', function () {
+                input.value = '';
+                btn.disabled = true;
+            });
+        }
+    });
 </script>
 
 </body>

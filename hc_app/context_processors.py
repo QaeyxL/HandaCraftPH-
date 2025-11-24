@@ -1,5 +1,6 @@
 from hc_app.models import CartItem, UserProfile, Product
 from .models import Category   # edit22 - added
+from .utils import get_unique_categories
 
 def cart_item_count(request):
     if request.user.is_authenticated:
@@ -13,7 +14,8 @@ def user_profile(request):
     return {'user_profile': None}
 
 def categories_processor(request):   # edit22 - added
-    return {"categories": Category.objects.all()}
+    # Use de-duplicated categories to avoid repeated names in menus
+    return {"categories": get_unique_categories()}
 
 
 def is_seller_processor(request):

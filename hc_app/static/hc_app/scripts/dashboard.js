@@ -63,49 +63,83 @@ function buildStatsUrl() {
 
 // Render simple bar chart for monthly sales
 function renderMonthlySales(monthly) {
-  const container = document.getElementById('monthly-sales-chart');
-  if (!container) return;
-  container.innerHTML = '';
+  // Prefer the canvas used in the template, fallback to a div for legacy styles
+  const canvas = document.getElementById('monthly-sales-canvas');
+  const fallback = document.getElementById('monthly-sales-chart');
+  if (!canvas && !fallback) return;
+
   if (!Array.isArray(monthly) || monthly.length === 0) {
-    container.innerHTML = '<div class="text-muted">No sales data yet.</div>';
+    if (fallback) fallback.innerHTML = '<div class="text-muted">No sales data yet.</div>';
+    if (canvas && canvas.getContext) {
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.font = '14px sans-serif';
+      ctx.fillStyle = '#777';
+      ctx.fillText('No sales data yet.', 10, 20);
+    }
     return;
   }
-  const max = Math.max(...monthly.map(m => Number(m.total) || 0), 1);
-  const chart = document.createElement('div');
-  chart.style.display = 'flex';
-  chart.style.gap = '8px';
-  chart.style.alignItems = 'end';
-  monthly.forEach(m => {
-    const barWrap = document.createElement('div');
-    barWrap.style.width = '48px';
-    barWrap.style.textAlign = 'center';
 
-    const bar = document.createElement('div');
-    const value = Number(m.total) || 0;
-    const pct = Math.round((value / max) * 100);
-    bar.style.height = Math.max(6, pct) + 'px';
-    bar.style.background = '#0d6efd';
-    bar.style.borderRadius = '4px 4px 0 0';
-    bar.style.transition = 'height 600ms ease';
-    bar.title = value.toFixed(2);
+  // If Chart.js is available and a canvas exists, render a bar chart there
+  if (canvas && typeof Chart !== 'undefined') {
+    // prepare labels and data
+    const labels = monthly.map(m => new Date(m.year, m.month - 1, 1).toLocaleString(undefined, { month: 'short' }));
+    const data = monthly.map(m => Number(m.total) || 0);
+    // destroy existing chart instance if stored
+    if (canvas._hc_chart) {
+      try { canvas._hc_chart.destroy(); } catch (e) { /* ignore */ }
+    }
+    canvas._hc_chart = new Chart(canvas.getContext('2d'), {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [{ label: 'Sales', data: data, backgroundColor: '#0d6efd' }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+    return;
+  }
 
-    const label = document.createElement('div');
-    label.style.fontSize = '11px';
-    label.style.marginTop = '6px';
-    const monthName = new Date(m.year, m.month - 1, 1).toLocaleString(undefined, { month: 'short' });
-    label.textContent = monthName;
+  // Fallback to simple div-based bars if no Chart.js is available
+  if (fallback) {
+    fallback.innerHTML = '';
+    const max = Math.max(...monthly.map(m => Number(m.total) || 0), 1);
+    const chart = document.createElement('div');
+    chart.style.display = 'flex';
+    chart.style.gap = '8px';
+    chart.style.alignItems = 'end';
+    monthly.forEach(m => {
+      const barWrap = document.createElement('div');
+      barWrap.style.width = '48px';
+      barWrap.style.textAlign = 'center';
 
-    const valLabel = document.createElement('div');
-    valLabel.style.fontSize = '11px';
-    valLabel.style.color = '#333';
-    valLabel.textContent = value ? value.toFixed(0) : '';
+      const bar = document.createElement('div');
+      const value = Number(m.total) || 0;
+      const pct = Math.round((value / max) * 100);
+      bar.style.height = Math.max(6, pct) + 'px';
+      bar.style.background = '#0d6efd';
+      bar.style.borderRadius = '4px 4px 0 0';
+      bar.style.transition = 'height 600ms ease';
+      bar.title = value.toFixed(2);
 
-    barWrap.appendChild(bar);
-    barWrap.appendChild(valLabel);
-    barWrap.appendChild(label);
-    chart.appendChild(barWrap);
-  });
-  container.appendChild(chart);
+      const label = document.createElement('div');
+      label.style.fontSize = '11px';
+      label.style.marginTop = '6px';
+      const monthName = new Date(m.year, m.month - 1, 1).toLocaleString(undefined, { month: 'short' });
+      label.textContent = monthName;
+
+      const valLabel = document.createElement('div');
+      valLabel.style.fontSize = '11px';
+      valLabel.style.color = '#333';
+      valLabel.textContent = value ? value.toFixed(0) : '';
+
+      barWrap.appendChild(bar);
+      barWrap.appendChild(valLabel);
+      barWrap.appendChild(label);
+      chart.appendChild(barWrap);
+    });
+    fallback.appendChild(chart);
+  }
 }
 
 // Fetch initial stats from server for this seller's dashboard and set polling
@@ -153,9 +187,13 @@ function updateCartActivity(items){
   }
 }
 
-am5.ready(function() {
-  try {
-    var root = am5.Root.new("ph-map");
+// Initialize amCharts map only when am5 is present. Guarding prevents a
+// ReferenceError that would stop the rest of the dashboard JS from running
+// (which breaks buttons and other handlers).
+if (typeof am5 !== 'undefined' && am5 && typeof am5.ready === 'function') {
+  am5.ready(function() {
+    try {
+      var root = am5.Root.new("ph-map");
 
     root.setThemes([
       am5themes_Animated.new(root)
@@ -241,14 +279,21 @@ am5.ready(function() {
     } catch (e) {
       console.warn('Failed to update stat panels:', e);
     }
-  } catch (e) {
-    console.error('Map init error:', e);
-    const mapEl = document.getElementById('ph-map');
-    if (mapEl) {
-      mapEl.innerHTML = '<div style="color:#900;padding:12px;background:#fff;border-radius:6px;">Map error: ' + (e && e.message ? e.message : e) + '</div>';
+    } catch (e) {
+      console.error('Map init error:', e);
+      const mapEl = document.getElementById('ph-map');
+      if (mapEl) {
+        mapEl.innerHTML = '<div style="color:#900;padding:12px;background:#fff;border-radius:6px;">Map error: ' + (e && e.message ? e.message : e) + '</div>';
+      }
     }
+  });
+} else {
+  // amCharts not loaded; show harmless placeholder in map area if present
+  const mapEl = document.getElementById('ph-map');
+  if (mapEl) {
+    mapEl.innerHTML = '<div class="text-muted" style="padding:10px;">Map disabled (amCharts not loaded).</div>';
   }
-});
+}
 
 // Chat data
 const chats = {
@@ -324,16 +369,17 @@ chatUsers.forEach(user => {
   });
 });
 
-// Send new message
-sendButton.addEventListener("click", sendMessage);
-inputField.addEventListener("keypress", (e) => {
+// Send new message (guard event listeners in case chat UI is not present)
+if (sendButton) sendButton.addEventListener("click", sendMessage);
+if (inputField) inputField.addEventListener("keypress", (e) => {
   if (e.key === "Enter") sendMessage();
 });
 
 function sendMessage() {
+  if (!inputField || !messagesContainer) return;
   const text = inputField.value.trim();
   if (!text) return;
-  
+
   const div = document.createElement("div");
   div.classList.add("message", "sent");
   div.textContent = text;
