@@ -354,7 +354,11 @@ def edit_product(request, pk):
 
 def category_view(request, category_id):
     category = get_object_or_404(Category, id=category_id)
-    products = Product.objects.filter(category=category)
+    # Some deployments contain duplicate Category rows with the same name but
+    # different ids. To ensure products linked to any duplicate category are
+    # included, match by the category name (case-insensitive) as well as the
+    # chosen Category instance.
+    products = Product.objects.filter(category__name__iexact=category.name)
     return render(request, 'hc_app/category_products.html', {'category': category, 'products': products})
 
 def categories_list(request):   # edit22 - added
