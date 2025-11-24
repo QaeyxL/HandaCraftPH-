@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import User
 from datetime import date
+from django.contrib.auth import get_user_model
+
+UserModel = get_user_model()
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -85,4 +88,11 @@ class OrderItem(models.Model):
     product_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     quantity = models.PositiveIntegerField()
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
+
+class Quote(models.Model):
+    seller = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='received_quotes')
+    buyer = models.ForeignKey(UserModel, on_delete=models.CASCADE, related_name='sent_quotes')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, null=True, blank=True)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
                                

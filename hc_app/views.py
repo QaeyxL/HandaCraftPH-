@@ -6,15 +6,17 @@ from django.conf import settings
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from twilio.rest import Client
+from django.contrib.auth.models import User  # edit22 - added
 from .forms import RegisterForm, ProductForm, CheckoutForm, BuyerAddressForm
 import requests, easypost
 from easypost import EasyPostClient
 from random import choice
-from .models import Product, Category, CartItem, ProductImage, Order, OrderItem, UserProfile
+from .models import Product, Category, CartItem, ProductImage, Order, OrderItem, UserProfile, Quote
 from django.http import JsonResponse
 from decimal import Decimal
 from datetime import datetime, timedelta
 from django.views.decorators.csrf import csrf_exempt
+from decouple import config  # edit22 - added 
 
 #twilio whatsapp message code template
 def send_whatsapp_message(to_number, message_body):
@@ -28,6 +30,19 @@ def send_whatsapp_message(to_number, message_body):
         to=f'whatsapp:{to_number}',
         body=message_body
     )
+
+# edit22 - add
+@login_required  
+def message_user(request, user_id):
+    recipient_profile = get_object_or_404(UserProfile, user__id=user_id)
+    if request.method == "POST":
+        body = request.POST.get("message")
+        try:
+            send_whatsapp_message(recipient_profile.contact_number, body)
+            messages.success(request, f"Message sent to {recipient_profile.user.username}")
+        except Exception as e:
+            messages.error(request, f"Failed to send message: {e}")
+    return redirect("hc_app:dashboard")
 
 #Retrieve backup quotes when random quotes from API are unretrievable
 def get_random_quote():
@@ -160,9 +175,24 @@ def sell(request):
          'user_products': user_products}
     )
 
-def catalog(request):
+# edit22 - remove def catalog(request):
     products = Product.objects.all()
     return render(request, 'hc_app/catalog.html', {'products': products})
+
+def catalog(request):   # edit22 - edited
+    products = Product.objects.all()
+    category = request.GET.get("category")
+    if category:
+        products = products.filter(category__name=category)
+
+    # Provide categories to populate the filter dropdown
+    categories = Category.objects.all()
+
+    return render(request, 'hc_app/catalog.html', {
+        'products': products,
+        'categories': categories,
+        'active_category': category or ''
+    })
 
 def product_detail(request, pk):
     product = Product.objects.get(id=pk)
@@ -193,6 +223,10 @@ def category_view(request, category_id):
     category = get_object_or_404(Category, id=category_id)
     products = Product.objects.filter(category=category)
     return render(request, 'hc_app/category_products.html', {'category': category, 'products': products})
+
+def categories_list(request):   # edit22 - added
+    categories = Category.objects.all()
+    return render(request, "hc_app/categories.html", {"categories": categories})
 
 def home_view(request):
     categories = Category.objects.all()
@@ -563,15 +597,21 @@ def address_autocomplete(request):
 
 @login_required
 def dashboard_view(request):
+    user_products = Product.objects.filter(seller=request.user)   # edit22 - add (4)
+    recent_orders = Order.objects.filter(seller=request.user).order_by('-created_at')[:10]    
+    total_orders = Order.objects.filter(seller=request.user).count()
+    total_customers = Order.objects.filter(seller=request.user).values('buyer').distinct().count()
     # dummy stats
     context = {
-        "total_customers": 0,
-        "total_orders": 0,
+        "total_customers": total_customers,
+        "total_orders": total_orders,
         "monthly_sales": [],
-        "recent_orders": [],
-        "user_products": request.user.products.all()  
-    }
-    return render(request, "hc_app/dashboard.html")
+        "recent_orders": recent_orders,
+        "user_products": user_products,   # edit22 - edited "user_products": request.user.products.all()
+        "users": User.objects.exclude(id=request.user.id),   # edit22 - added
+        "recent_quotes": Quote.objects.filter(seller=request.user).order_by("-created_at")[:20],  # edit22 - added
+        }
+    return render(request, "hc_app/dashboard.html", context)   # edit22 - add context
 
 
 @login_required
@@ -581,6 +621,30 @@ def my_orders_view(request):
     return render(request, "hc_app/my_orders.html", {
         "orders": orders
     })
+
+@login_required     # edit22 - added
+def send_quote(request, seller_id, product_id=None):
+    seller = get_object_or_404(User, id=seller_id)
+    product = Product.objects.filter(id=product_id).first() if product_id else None
+
+    if request.method == "POST":
+        msg = request.POST.get("message", "").strip()
+        if msg:
+            from .models import Quote
+            Quote.objects.create(
+                seller=seller,
+                buyer=request.user,
+                product=product,
+                message=msg
+            )
+            messages.success(request, "Quote sent successfully.")
+        else:
+            messages.error(request, "Message cannot be empty.")
+
+    # Redirect back to product detail if product_id was given
+    if product_id:
+        return redirect("hc_app:product_detail", pk=product_id)
+    return redirect("hc_app:home")
 
 @login_required
 def order_confirmation_view(request, order_id):
@@ -608,3 +672,28 @@ def delete_order(request, order_id):
             messages.error(request, "You can only delete pending or processing orders.")
         return redirect('hc_app:orders')  
     return redirect('hc_app:orders')
+
+@login_required
+def update_order_status(request, order_id):    # edit22 - added
+    order = get_object_or_404(Order, id=order_id, seller=request.user)
+    if request.method == "POST":
+        new_status = request.POST.get("status")
+        if new_status in ["Pending", "Processing", "Shipped", "Delivered", "Cancelled"]:
+            order.status = new_status
+            order.save()
+            messages.success(request, "Order status updated.")
+        else:
+            messages.error(request, "Invalid status.")
+    return redirect("hc_app:dashboard")    # dashboard or orders?
+
+@login_required
+def search_view(request):   # edit22 - added
+    q = request.GET.get('q', '').strip()
+    results = Product.objects.none()
+    if q:
+        results = Product.objects.filter(name__icontains=q) | Product.objects.filter(description__icontains=q)
+    return render(request, 'hc_app/search_results.html', {
+        'query': q,
+        'results': results
+    })
+

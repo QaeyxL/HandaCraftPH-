@@ -12,12 +12,12 @@
 <div class="container">
     <div class="div1">
         <h2>Customers</h2>
-        <div class="stat-value">0</div>
+        <div class="stat-value">{{ total_customers }}</div>   <!-- edit22 - edit <div class="stat-value">0</div>-->
     </div>
 
     <div class="div2">
         <h2>Orders</h2>
-        <div class="stat-value">0</div>
+        <div class="stat-value">{{ total_orders }}</div>   <!-- edit22 - edit <div class="stat-value">0</div>-->
     </div>
 
     <div class="div3">
@@ -37,21 +37,54 @@
     </div>
 
     <div class="div6">
-        <h2>Recent Orders</h2>
+        <h2>Recent Orders</h2>   <!-- edit22 - edited -->
         <ul>
-            <li>Order #0000 -- </li>
-            <li>Order #0000 -- </li>
-            <li>Order #0000 -- </li>
+            {% for order in recent_orders %}
+                <li>
+                    Order #{{ order.id }} — {{ order.status }}
+
+                    <form method="post" action="{% url 'hc_app:update_order_status' order.id %}" class="d-inline">
+                        {% csrf_token %}
+                        <select name="status" class="form-select form-select-sm d-inline w-auto">
+                            {% for s in "Pending,Processing,Shipped,Delivered,Cancelled".split(',') %}
+                                <option value="{{ s }}" {% if order.status == s %}selected{% endif %}>{{ s }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-outline-primary">Update</button>
+                    </form>
+                </li>
+            {% empty %}
+                <li>No recent orders</li>
+            {% endfor %}
         </ul>
     </div>
+
+    <div class="div8">
+        <h2>My Listings</h2>   <!-- edit22 - added -->
+        <ul>
+            {% for product in user_products %}
+                </li></a>href="{% url 'hc_app:product_detail' product.id %}">{{ product.name }}</a>
+            {% empty %}
+                <li>No products listed yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
 
     <div class="div7">
         <h2>Customer Inquiries</h2>
         <div class="chat-container">
-            <div class="chat-list">
-                <div class="chat-user" data-user="1">Fn. Ln.</div>
-                <div class="chat-user" data-user="2">Fn. Ln.</div>
-                <div class="chat-user" data-user="3">Fn. Ln.</div>
+            <div class="chat-list">    
+                {% for user in users %}  <!-- edit22 - edited <div class="chat-user" data-user="1">Fn. Ln.</div> -->
+                    <div class="chat-user">
+                        <span>{{ user.username }}</span>
+                        <form method="post" action="{% url 'hc_app:message_user' user.id %}" class="d-flex gap-2 mt-1">
+                            {% csrf_token %}
+                            <input type="text" name="message" placeholder="Type a message..." class="form-control form-control-sm" required>
+                            <button type="submit" class="btn btn-sm btn-primary">Send</button>
+                        </form>
+                    </div>
+                {% endfor %}
             </div>
 
             <div class="chat-window hidden">
@@ -60,7 +93,14 @@
                 </div>
 
                 <div class="messages">
-
+                    {% for q in recent_quotes %}   <!-- edit22 - added -->
+                        <div class="mb-2">
+                        <strong>{{ q.buyer.username }}</strong>: {{ q.message }}
+                        <small class="text-muted">({{ q.created_at|date:"Y-m-d H:i" }})</small>
+                        </div>
+                    {% empty %}
+                        <p>No quotes yet.</p>
+                    {% endfor %}
                 </div>
 
                 <div class="chat-input">
