@@ -28,6 +28,7 @@ HandaCraftPH-
 │  ├─ forms.py
 │  ├─ management
 │  │  └─ commands
+│  │     ├─ fix_duplicate_categories.py
 │  │     └─ geocode_profiles.py
 │  ├─ migrations
 │  │  ├─ 0001_initial.py
@@ -48,6 +49,7 @@ HandaCraftPH-
 │  │  ├─ 0016_remove_order_shipping_label_url_and_more.py
 │  │  ├─ 0017_quote.py
 │  │  ├─ 0018_attribute_cartitem_customization_cartitem_item_price_and_more.py
+│  │  ├─ 0019_add_unique_slug.py
 │  │  └─ __init__.py
 │  ├─ models.py
 │  ├─ products
@@ -99,6 +101,7 @@ HandaCraftPH-
 │  │  └─ __init__.py
 │  ├─ tests.py
 │  ├─ urls.py
+│  ├─ utils.py
 │  ├─ views.py
 │  └─ __init__.py
 ├─ ITMGT 45.03 - Group 3 GC2.pdf
@@ -119,6 +122,7 @@ HandaCraftPH-
 └─ requirements.txt
 
 ```
+
 ## HandaCraftPH's Concept
 There is an abundance of local artisans in the Philippines, and while there are bazaars that allow them to showcase their work, some locations cannot be accessible by interested buyers. Moreover, potential customers have to go through each artisan's social media websites to order. The latter is handled by HandaCraftPH as it bridges the gap between local artisans and nationwide customers by offering a *specialized online marketplace* where buyers can discover, customize, and purchase crafted products, whether it’s rooted in tradition, cultural heritage, or personal creativity. It helps local artisans gain visibility beyond their local communities, connect with a broader market, and grow their businesses through accessible digital tools and direct engagement with customers.
 
@@ -218,4 +222,5 @@ API uses OpenStreetMap data. This is used to verify and/or suggest addresses to 
 
 ## Admin test credentials
 The Username and Password are in the submission bin comment box.
+
 
