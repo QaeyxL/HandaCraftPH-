@@ -119,8 +119,10 @@ HandaCraftPH-
 └─ requirements.txt
 
 ```
-## HandaCraftPH Overview
-HandaCraftPH is designed as a culturally conscious marketplace system that supports MSMEs and traditional artisans through customizable workflows and role-based access.
+## HandaCraftPH's Concept
+There is an abundance of local artisans in the Philippines, and while there are bazaars that allow them to showcase their work, some locations cannot be accessible by interested buyers. Moreover, potential customers have to go through each artisan's social media websites to order. The latter is handled by HandaCraftPH as it bridges the gap between local artisans and nationwide customers by offering a *specialized online marketplace* where buyers can discover, customize, and purchase crafted products, whether it’s rooted in tradition, cultural heritage, or personal creativity. It helps local artisans gain visibility beyond their local communities, connect with a broader market, and grow their businesses through accessible digital tools and direct engagement with customers.
+
+For buyers, it offers a meaningful way to discover and personalize unique crafts that reflect culture or personal identity, while supporting and promoting local craftsmanship across the Philippines.
 
 ## Tech stack & version numbers.
 
