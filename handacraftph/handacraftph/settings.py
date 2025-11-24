@@ -152,3 +152,7 @@ MEDIA_ROOT = Path(BASE_DIR).parent / 'media'
 EASYPOST_API_KEY = config('EASYPOST_API_KEY')
 
 LOGIN_URL = reverse_lazy('hc_app:login')
+
+TWILIO_ACCOUNT_SID = config('TWILIO_ACCOUNT_SID')
+TWILIO_AUTH_TOKEN = config('TWILIO_AUTH_TOKEN')
+TWILIO_PHONE_NUMBER = '+15644655756'  # your Twilio number
