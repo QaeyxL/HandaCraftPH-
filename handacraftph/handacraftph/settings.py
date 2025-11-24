@@ -147,7 +147,8 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = Path(BASE_DIR).parent / 'media'
+# Store uploaded media inside the project BASE_DIR/media (was mistakenly set one level up)
+MEDIA_ROOT = BASE_DIR / 'media'
 
 EASYPOST_API_KEY = config('EASYPOST_API_KEY')
 
