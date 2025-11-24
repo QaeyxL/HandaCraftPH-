@@ -1,66 +1,223 @@
 {% extends 'hc_app/base.html' %}
+{% load static %}
 {% load mul_filters %}
+
+{% block title %}Cart | HandacraftPH{% endblock %}
+
+{% block body_class %}cart{% endblock %}
+
+{% block extra_css %}
+<style>
+body.cart {
+    background-color: rgba(255, 242, 216, 0.922);
+    font-family: Arial, sans-serif;
+}
+
+body.cart .container {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+}
+
+body.cart .header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+body.cart .header .logo {
+    font-size: 24px;
+    font-weight: bold;
+    color: #904b1d;
+}
+
+body.cart .header .tagline {
+    font-size: 14px;
+    color: #666;
+}
+
+body.cart .cart-items {
+    border-top: 2px solid #ccc;
+    margin-top: 20px;
+}
+
+body.cart .cart-header-row,
+body.cart .cart-item {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+    align-items: center;
+    padding: 10px 0;
+}
+
+body.cart .cart-header-row {
+    font-weight: bold;
+    border-bottom: 2px solid #ccc;
+}
+
+body.cart .cart-item {
+    border-bottom: 1px solid #e2e2e2;
+}
+
+body.cart .quantity {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+body.cart .increase-qty,
+body.cart .decrease-qty {
+    padding: 4px 10px;
+    border: 1px solid #ccc;
+    background: #f7f7f7;
+    cursor: pointer;
+    border-radius: 5px;
+}
+
+body.cart .increase-qty:hover,
+body.cart .decrease-qty:hover {
+    background: #eaeaea;
+}
+
+body.cart .quantity-value {
+    min-width: 25px;
+    text-align: center;
+    font-weight: bold;
+}
+
+body.cart .item-subtotal {
+    font-weight: 600;
+    text-align: right;
+}
+
+body.cart .remove-item {
+    padding: 6px 14px;
+    background: #ff3a2f;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+body.cart .remove-item:hover {
+    background: #e05750;
+}
+
+body.cart .cart-summary {
+    margin-top: 20px;
+    text-align: right;
+}
+
+body.cart .checkout-button {
+    display: inline-block;
+    background: #e4794b;
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    text-decoration: none;
+}
+
+body.cart .checkout-button:hover {
+    background: #d16a3e;
+}
+</style>
+
+{% endblock %}
+
 {% block content %}
+<div class="container">
+    <div class="header">
+        <div class="logo">
+            HandaCraftPH
+            <div class="tagline">Discover. Customize. Support Local</div>
+        </div>
+        <h1>Shopping Cart</h1>
+    </div>
 
-<h1>Your Cart</h1>
+    {% if cart_items %}
+    <div class="cart-items">
+        <div class="cart-header-row">
+            <div class="product-header">Product</div>
+            <div class="unit-price-header">Unit Price</div>
+            <div class="quantity-header">Qty</div>
+            <div class="item-subtotal-header">Subtotal</div>
+            <div class="actions-header">Actions</div>
+        </div>
 
-{% if cart_items %}
-<table>
-  <thead>
-    <tr>
-      <th>Product</th>
-      <th>Quantity</th>
-      <th>Price</th>
-      <th>Total</th>
-      <th>Actions</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for item in cart_items %}
-    <tr>
-      <td>{{ item.product.name }}</td>
-      <td>
+        {% for item in cart_items %}
+        <div class="cart-item" data-item-id="{{ item.id }}">
+            <div class="product-name">{{ item.product.name }}</div>
+            <div class="unit-price">₱{{ item.product.price|floatformat:2 }}</div>
+            <div class="quantity">
+                <button class="decrease-qty">-</button>
+                <span class="quantity-value">{{ item.quantity }}</span>
+                <button class="increase-qty">+</button>
+            </div>
+            <div class="item-subtotal">₱{{ item.product.price|mul:item.quantity|floatformat:2 }}</div>
+            <div class="actions">
+                <form method="POST" action="{% url 'hc_app:remove_from_cart' item.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="remove-item">Remove</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 
-        <form action="{% url 'hc_app:update_cart' item.id %}" method="POST" style="display:inline;">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="decrease">
-          <button type="submit">−</button>
-        </form>
+    <div class="cart-summary">
+        <h3>Cart Total: ₱<span id="cart-total">{{ total|floatformat:2 }}</span></h3>
+        <a href="{% url 'hc_app:checkout' %}" class="checkout-button">Proceed to Checkout</a>
+    </div>
+    {% else %}
+    <p>Your cart is empty.</p>
+    {% endif %}
+</div>
+{% endblock %}
 
-        {{ item.quantity }}
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const cartItems = document.querySelectorAll(".cart-item");
 
-        <form action="{% url 'hc_app:update_cart' item.id %}" method="POST" style="display:inline;">
-          {% csrf_token %}
-          <input type="hidden" name="action" value="increase">
-          <button type="submit">+</button>
-        </form>
-      </td>
+    cartItems.forEach(item => {
+        const itemId = item.dataset.itemId;
+        const increaseBtn = item.querySelector(".increase-qty");
+        const decreaseBtn = item.querySelector(".decrease-qty");
+        const qtySpan = item.querySelector(".quantity-value");
+        const itemSubtotalDiv = item.querySelector(".item-subtotal");
+        const cartTotalSpan = document.getElementById("cart-total");
 
-      <td>₱{{ item.product.price|floatformat:2 }}</td>
+        function updateCart(action) {
+            fetch("{% url 'hc_app:update_cart' 0 %}".replace("0", itemId), {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": "{{ csrf_token }}",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "Content-Type": "application/x-www-form-urlencoded"
+                },
+                body: new URLSearchParams({ action })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.success) {
+                    if(data.quantity === 0) {
+                        item.remove();
+                    } else {
+                        qtySpan.textContent = data.quantity;
+                        itemSubtotalDiv.textContent = "₱" + data.item_subtotal.toFixed(2);
+                    }
+                    cartTotalSpan.textContent = data.cart_total.toFixed(2);
+                } else if(data.error) {
+                    alert(data.error);
+                }
+            })
+            .catch(err => console.error(err));
+        }
 
-      <td>₱{{ item.product.price|mul:item.quantity|floatformat:2 }}</td>
-
-      <td>
-        <form action="{% url 'hc_app:remove_from_cart' item.id %}" method="POST" style="display:inline;">
-          {% csrf_token %}
-          <button type="submit" class="btn btn-danger btn-sm">Remove</button>
-        </form>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-
-<form action="{% url 'hc_app:checkout' %}" method="get">
-    <button type="submit" class="checkout-btn">Proceed to Checkout</button>
-</form>
-
-
-<p><strong>Total:</strong> ₱{{ total|floatformat:2 }}</p>
-
-
-{% else %}
-  <p>Your cart is empty.</p>
-{% endif %}
-
+        increaseBtn.addEventListener("click", () => updateCart("increase"));
+        decreaseBtn.addEventListener("click", () => updateCart("decrease"));
+    });
+});
+</script>
 {% endblock %}

@@ -28,6 +28,7 @@
         {{ form.price }}
       </div>
 
+      
       <div class="form-group">
         <label for="id_category">Category</label>
         {{ form.category }}
@@ -41,40 +42,47 @@
       <div class="form-group">
         <label for="id_images">Upload Product Images</label>
         <input type="file" id="id_images" name="images" multiple required>
-        <div id="image-preview-container" style="display:flex; flex-wrap: wrap; gap:10px;"></div>
+        <div id="image-preview-container" style="display:flex; flex-wrap: wrap; gap:10px; margin-top:5px;"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="id_stock">Available Stock</label>
+        {{ form.stock }}
       </div>
 
       <hr>
-    <h4>Parcel Details</h4>
+      <h4>Parcel Details</h4>
+      <label for="weight">Weight (oz):</label>
+      <input type="number" step="0.01" name="weight" id="weight" required>
 
-    <label for="weight">Weight (oz):</label>
-    <input type="number" step="0.01" name="weight" id="weight" required>
+      <label for="length">Length (in):</label>
+      <input type="number" step="0.01" name="length" id="length" required>
 
-    <label for="length">Length (in):</label>
-    <input type="number" step="0.01" name="length" id="length" required>
+      <label for="width">Width (in):</label>
+      <input type="number" step="0.01" name="width" id="width" required>
 
-    <label for="width">Width (in):</label>
-    <input type="number" step="0.01" name="width" id="width" required>
+      <label for="height">Height (in):</label>
+      <input type="number" step="0.01" name="height" id="height" required>
 
-    <label for="height">Height (in):</label>
-    <input type="number" step="0.01" name="height" id="height" required>
+      <hr>
+      <h4>Seller Address</h4>
+      <label for="street1">Street:</label>
+      <input type="text" name="street1" id="street1" required placeholder="Start typing your address">
+      <ul id="address-suggestions" style="list-style:none; padding-left:0;"></ul>
 
-    <hr>
-    <h4>Seller Address</h4>
+      <label for="city">City:</label>
+      <input type="text" name="city" id="city" required>
 
-    <label for="street1">Street:</label>
-    <input type="text" name="street1" id="street1" required>
+      <label for="state">State:</label>
+      <input type="text" name="state" id="state" required>
 
-    <label for="city">City:</label>
-    <input type="text" name="city" id="city" required>
+      <label for="zip">ZIP Code:</label>
+      <input type="text" name="zip" id="zip" required>
 
-    <label for="state">State:</label>
-    <input type="text" name="state" id="state" required>
+      <label for="country">Country:</label>
+      <input type="text" name="country" id="country" value="PH" required>
 
-    <label for="zip">ZIP Code:</label>
-    <input type="text" name="zip" id="zip" required>
-
-      <div class="form-buttons">
+      <div class="form-buttons" style="margin-top:15px;">
         <button type="button" onclick="history.back()">Back</button>
         <button type="submit">Submit Craft</button>
       </div>
@@ -89,28 +97,19 @@
             <img src="{{ product.images.first.image.url }}" alt="{{ product.name }}" style="width:100%; height:100%; object-fit:cover;">
           {% endif %}
         </div>
-
         <h3>{{ product.name }}</h3>
         <p>₱{{ product.price }}</p>
         <p>{{ product.category.name }}</p>
 
-        <form action="{% url 'hc_app:delete_product' product.id %}" method="POST" onsubmit="return confirm('Are you sure you want to delete this product? This action cannot be undone.');">
+        <form action="{% url 'hc_app:delete_product' product.id %}" method="POST" onsubmit="return confirm('Are you sure you want to delete this product?');">
           {% csrf_token %}
-          <button type="submit" class="delete-btn" style="background:red; color:rgb(255, 255, 255); border:none; padding:5px 10px; cursor:pointer;">Delete</button>
+          <button type="submit" class="delete-btn" style="background:red; color:white; border:none; padding:5px 10px; cursor:pointer;">Delete</button>
         </form>
-
-        <script>
-          function confirmDelete() {
-            return confirm("Are you sure you want to delete this product? This action cannot be undone.");
-          }
-        </script>
-        
       </div>
       {% empty %}
         <p>You have no listings yet.</p>
       {% endfor %}
     </div>
-
   </div>
 </section>
 
@@ -164,7 +163,39 @@ function renderPreviews() {
     fileInput.files = dataTransfer.files;
 }
 
+const streetInput = document.getElementById('street1');
+const suggestionsList = document.getElementById('address-suggestions');
+
+streetInput.addEventListener('input', async () => {
+    const query = streetInput.value;
+    if (query.length < 3) {
+        suggestionsList.innerHTML = '';
+        return;
+    }
+
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&addressdetails=1&limit=5`, {
+        headers: { 'User-Agent': 'HandacraftPH/1.0' }
+    });
+    const data = await res.json();
+
+    suggestionsList.innerHTML = '';
+    data.forEach(addr => {
+        const li = document.createElement('li');
+        li.textContent = addr.display_name;
+        li.style.cursor = 'pointer';
+        li.style.padding = '5px 0';
+        li.addEventListener('click', () => {
+            streetInput.value = addr.address.road || addr.address.pedestrian || '';
+            document.getElementById('city').value = addr.address.city || addr.address.town || addr.address.village || '';
+            document.getElementById('state').value = addr.address.state || '';
+            document.getElementById('zip').value = addr.address.postcode || '';
+            document.getElementById('country').value = addr.address.country || 'PH';
+            suggestionsList.innerHTML = '';
+        });
+        suggestionsList.appendChild(li);
+    });
+});
 </script>
 
-
 {% endblock %}
+

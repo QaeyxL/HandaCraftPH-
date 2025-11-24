@@ -7,8 +7,7 @@
     5. Featured Crafts
     6. Footer
     7. Sell Page
-    8. Checkout (scoped to `body.checkout`)
-    9. Utilities / Forms / Buttons / Previews
+    8. Utilities / Forms / Buttons / Previews
 */
 
 /* -----------------------------
@@ -452,217 +451,9 @@ footer {
   background-color: red;
 }
 
-/* -----------------------------
-   8) CHECKOUT (scoped to body.checkout)
-   ----------------------------- */
-
-body.checkout {
-  font-family: sans-serif; 
-  margin: 0;
-  padding: 0;
-  background-color: #f8f8f8;
-}
-
-body.checkout .container {
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 20px;
-  background-color: #fff;
-  box-sizing: border-box;
-  overflow-y: auto;
-  min-height: 100vh;
-}
-
-body.checkout .header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-body.checkout .logo {
-  font-size: 18px;
-  font-weight: bold;
-  color: #333;
-}
-
-body.checkout .tagline {
-  font-size: 10px;
-  color: #777;
-}
-
-body.checkout h1 {
-  font-size: 24px;
-  color: #333;
-  margin: 0;
-}
-
-body.checkout .delivery-address {
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  padding: 10px;
-  margin-bottom: 15px;
-  box-sizing: border-box;
-}
-
-body.checkout .products,
-body.checkout .shipping-option,
-body.checkout .payment-method {
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  padding: 10px;
-  margin-bottom: 15px;
-  box-sizing: border-box;
-}
-
-body.checkout .address-header,
-body.checkout .products-header,
-body.checkout .shipping-header,
-body.checkout .payment-header {
-  font-weight: bold;
-  color: #555;
-  margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-}
-
-body.checkout .address-icon,
-body.checkout .products-icon,
-body.checkout .shipping-icon {
-  width: 20px;
-  height: 20px;
-  margin-right: 5px;
-}
-
-body.checkout .address-details {
-  color: #666;
-}
-
-body.checkout .name {
-  font-weight: bold;
-  margin-bottom: 5px;
-}
-
-body.checkout .address-line {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-body.checkout .address {
-  flex-grow: 1;
-}
-
-body.checkout .change-address {
-  color: #e4794b;
-  cursor: pointer;
-  font-size: 14px;
-  white-space: nowrap;
-  bottom: -10px;
-  right: 10px;
-  background-color: #fff;
-  padding: 0 5px;
-}
-
-body.checkout .change-address:hover {
-  text-decoration: underline;
-}
-
-body.checkout .product-header-row {
-  display: flex;
-  justify-content: space-between;
-  font-weight: bold;
-  color: #555;
-  padding: 5px 0;
-  border-bottom: 1px solid #eee;
-  margin-bottom: 5px;
-}
-
-body.checkout .product-header { width: 40%; text-align: left; }
-body.checkout .unit-price-header { width: 20%; text-align: right; }
-body.checkout .quantity-header { width: 15%; text-align: center; }
-body.checkout .item-subtotal-header { width: 25%; text-align: right; }
-
-body.checkout .product-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #eee;
-  box-sizing: border-box;
-}
-
-body.checkout .product-item:last-child { border-bottom: none; }
-
-body.checkout .product-image {
-  width: 50px;
-  height: 50px;
-  border: 1px dashed #999;
-  margin-right: 10px;
-}
-
-body.checkout .product-details { flex-grow: 1; width: 40%; }
-body.checkout .product-name { font-weight: bold; color: #444; }
-body.checkout .product-price { color: #777; }
-
-body.checkout .unit-price,
-body.checkout .quantity,
-body.checkout .item-subtotal {
-  width: 20%;
-  text-align: right;
-  color: #555;
-  box-sizing: border-box;
-}
-
-body.checkout .quantity { text-align: center; }
-
-body.checkout .shipping-details { display: flex; justify-content: space-between; color: #666; box-sizing: border-box; }
-body.checkout .shipping-cost { font-weight: bold; }
-
-body.checkout .payment-options { display: flex; flex-wrap: wrap; gap: 8px; }
-
-body.checkout .payment-button {
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background-color: #f9f9f9;
-  color: #555;
-  padding: 8px 12px;
-  cursor: pointer;
-  font-size: 14px;
-  box-sizing: border-box;
-}
-
-body.checkout .payment-button.active {
-  background-color: #e4794b;
-  color: #fff;
-  border-color: #e4794b;
-}
-
-body.checkout .place-order {
-  background-color: #e4794b;
-  color: #fff;
-  border: none;
-  border-radius: 15px;
-  padding: 12px 20px;
-  font-size: 18px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  box-sizing: border-box;
-  float: right;
-}
-
-body.checkout .place-order:hover { background-color: #d16a3e; cursor: pointer; }
-
-body.checkout .grand-total {
-    text-align: right;
-    font-size: 1.2rem;
-    font-weight: 700;
-    margin-top: 20px;
-}
 
 /* -----------------------------
-   9) UTILITIES / FORM HELPERS
+   8) UTILITIES / FORM HELPERS
    ----------------------------- */
 
 .text-center { text-align: center; }
@@ -830,4 +621,95 @@ body.checkout .grand-total {
 .place-order:hover {
     background-color: #d16a3e;
     cursor: pointer;
+}
+
+
+/* -----------------------------
+   CART PAGE LAYOUT
+   ----------------------------- */
+
+.cart-items {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+}
+
+/* Header row */
+.cart-header-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 2fr 1fr 1fr; /* Product | Unit Price | Quantity | Subtotal | Actions */
+    align-items: center;
+    font-weight: bold;
+    padding: 10px 0;
+    border-bottom: 2px solid #ccc;
+    gap: 10px;
+}
+
+/* Each cart row */
+.cart-item {
+    display: grid;
+    grid-template-columns: 2fr 1fr 2fr 1fr 1fr;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #e2e2e2;
+    gap: 10px;
+}
+
+.product-name {
+    text-align: left;
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
+
+/* Unit price and subtotal alignment */
+.unit-price,
+.item-subtotal {
+    text-align: right;
+    color: #555;
+    font-weight: 600;
+}
+
+/* Quantity container */
+.quantity {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 5px;
+}
+
+.quantity button {
+    min-width: 30px;
+    min-height: 30px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background: #f7f7f7;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.quantity button:hover {
+    background: #eaeaea;
+}
+
+.quantity-value {
+    min-width: 25px;
+    display: inline-block;
+    text-align: center;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+/* Remove button */
+.remove-item {
+    padding: 6px 14px;
+    background: #ff6961;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.remove-item:hover {
+    background: #e05750;
 }
