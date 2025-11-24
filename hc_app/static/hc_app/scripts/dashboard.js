@@ -29,6 +29,10 @@ function updateStats(data = {}) {
   const ordersEl = document.querySelector('.div2 .stat-value');
   animateValue(custEl, totalCustomers);
   animateValue(ordersEl, ordersCount);
+  // render monthly sales if provided
+  if (Array.isArray(data.monthly_sales)) {
+    renderMonthlySales(data.monthly_sales);
+  }
 }
 
 // Expose helper so future data loads can update the dashboard:
@@ -44,11 +48,109 @@ window.fetchAndUpdateStats = async function(url) {
   }
 };
 
-// Fetch initial stats from server for this seller's dashboard
+// Helper: read selected category from the dashboard filter
+function getSelectedCategory() {
+  const el = document.getElementById('dashboard-category');
+  return el && el.value ? el.value : '';
+}
+
+function buildStatsUrl() {
+  const cat = getSelectedCategory();
+  let url = '/hc_app/dashboard/stats/';
+  if (cat) url += '?category=' + encodeURIComponent(cat);
+  return url;
+}
+
+// Render simple bar chart for monthly sales
+function renderMonthlySales(monthly) {
+  const container = document.getElementById('monthly-sales-chart');
+  if (!container) return;
+  container.innerHTML = '';
+  if (!Array.isArray(monthly) || monthly.length === 0) {
+    container.innerHTML = '<div class="text-muted">No sales data yet.</div>';
+    return;
+  }
+  const max = Math.max(...monthly.map(m => Number(m.total) || 0), 1);
+  const chart = document.createElement('div');
+  chart.style.display = 'flex';
+  chart.style.gap = '8px';
+  chart.style.alignItems = 'end';
+  monthly.forEach(m => {
+    const barWrap = document.createElement('div');
+    barWrap.style.width = '48px';
+    barWrap.style.textAlign = 'center';
+
+    const bar = document.createElement('div');
+    const value = Number(m.total) || 0;
+    const pct = Math.round((value / max) * 100);
+    bar.style.height = Math.max(6, pct) + 'px';
+    bar.style.background = '#0d6efd';
+    bar.style.borderRadius = '4px 4px 0 0';
+    bar.style.transition = 'height 600ms ease';
+    bar.title = value.toFixed(2);
+
+    const label = document.createElement('div');
+    label.style.fontSize = '11px';
+    label.style.marginTop = '6px';
+    const monthName = new Date(m.year, m.month - 1, 1).toLocaleString(undefined, { month: 'short' });
+    label.textContent = monthName;
+
+    const valLabel = document.createElement('div');
+    valLabel.style.fontSize = '11px';
+    valLabel.style.color = '#333';
+    valLabel.textContent = value ? value.toFixed(0) : '';
+
+    barWrap.appendChild(bar);
+    barWrap.appendChild(valLabel);
+    barWrap.appendChild(label);
+    chart.appendChild(barWrap);
+  });
+  container.appendChild(chart);
+}
+
+// Fetch initial stats from server for this seller's dashboard and set polling
 try {
-  window.fetchAndUpdateStats('/dashboard/stats/');
+  const fetchNow = () => window.fetchAndUpdateStats(buildStatsUrl());
+  fetchNow();
+  // poll every 8 seconds to pick up cart additions and other live changes
+  setInterval(fetchNow, 8000);
+  // also poll recent cart activity and update the UI
+  setInterval(() => fetchCartActivity('/hc_app/dashboard/cart-activity/'), 9000);
+  // bind category selector change
+  const sel = document.getElementById('dashboard-category');
+  if (sel) sel.addEventListener('change', fetchNow);
 } catch (e) {
   console.warn('Initial stats fetch failed:', e);
+}
+
+async function fetchCartActivity(url){
+  try{
+    const res = await fetch(url, {cache: 'no-store'});
+    if(!res.ok) throw new Error('Fetch failed');
+    const json = await res.json();
+    updateCartActivity(json.cart_activity || []);
+  }catch(e){
+    console.warn('fetchCartActivity error', e);
+  }
+}
+
+function updateCartActivity(items){
+  const container = document.getElementById('recent-cart-activity');
+  const statEl = document.querySelector('.div-cart .stat-value');
+  if(!container) return;
+  container.innerHTML = '';
+  if(Array.isArray(items) && items.length){
+    items.forEach(it =>{
+      const li = document.createElement('div');
+      li.className = 'mb-2';
+      li.innerHTML = `<strong>${it.buyer_username}</strong> added <em>${it.product_name}</em> x${it.quantity} <small class="text-muted">(${new Date(it.added_at).toLocaleString()})</small>`;
+      container.appendChild(li);
+    });
+    if(statEl) animateValue(statEl, items.length);
+  } else {
+    container.innerHTML = '<p class="text-muted">No recent cart activity.</p>';
+    if(statEl) animateValue(statEl, 0);
+  }
 }
 
 am5.ready(function() {

@@ -22,7 +22,16 @@
 
     <div class="div3">
         <h2>Monthly Sales</h2>
-        <div class="chart-placeholder">Sync Graph later</div>
+        <div class="mb-2 d-flex gap-2 align-items-center">
+            <label for="dashboard-category" class="small mb-0">Filter by category:</label>
+            <select id="dashboard-category" class="form-select form-select-sm w-auto">
+                <option value="">All categories</option>
+                {% for c in categories %}
+                    <option value="{{ c.id }}">{{ c.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div id="monthly-sales-chart" class="chart-placeholder">Loading sales...</div>
     </div>
 
     <div class="div4">
@@ -72,6 +81,64 @@
         </ul>
     </div>
 
+    <div class="div-cart">
+        <h2>Interested (In Cart)</h2>
+        <div class="stat-value">0</div>
+        <div id="recent-cart-activity" class="mt-2 text-sm">
+            <p class="text-muted">No recent cart activity.</p>
+        </div>
+    </div>
+
+    <div class="div9">
+        <h2>Seller Workflow</h2>
+        <p>Manage your custom order scheduling and progress here.</p>
+
+        <form method="post" action="{% url 'hc_app:workflow_create' %}" class="mb-3">
+            {% csrf_token %}
+            <div class="row g-2">
+                <div class="col-md-4">
+                    <input type="text" name="title" class="form-control" placeholder="Task title (e.g. Finish custom design)" required>
+                </div>
+                <div class="col-md-3">
+                    <select name="product" class="form-select">
+                        <option value="">Select product (optional)</option>
+                        {% for p in user_products %}
+                        <option value="{{ p.id }}">{{ p.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <input type="date" name="due_date" class="form-control">
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-sm btn-primary" type="submit">Add task</button>
+                </div>
+            </div>
+        </form>
+
+        <ul class="list-group">
+            {% for task in workflow_tasks %}
+            <li class="list-group-item d-flex justify-content-between align-items-start">
+                <div>
+                    <strong>{{ task.title }}</strong>
+                    {% if task.product %}<div class="small text-muted">Product: {{ task.product.name }}</div>{% endif %}
+                    {% if task.due_date %}<div class="small text-muted">Due: {{ task.due_date }}</div>{% endif %}
+                    <div class="small">Status: {{ task.get_status_display }}</div>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'hc_app:workflow_update' task.id %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                    <form method="post" action="{% url 'hc_app:workflow_delete' task.id %}" style="display:inline">
+                        {% csrf_token %}
+                        <button class="btn btn-sm btn-danger" type="submit">Delete</button>
+                    </form>
+                </div>
+            </li>
+            {% empty %}
+            <li class="list-group-item">No workflow tasks yet.</li>
+            {% endfor %}
+        </ul>
+    </div>
+
 
     <div class="div7">
         <h2>Customer Inquiries</h2>
@@ -95,6 +162,7 @@
                 </div>
 
                 <div class="messages">
+<<<<<<< Updated upstream
                     {% for quote in recent_quotes %}
                         <div class="chat-message">
                             <div class="chat-message-header">
@@ -103,6 +171,15 @@
                             <div class="chat-message-body">
                                 <p>{{ quote.message }}</p>
                             </div>
+=======
+                    {% if db_ok is defined and not db_ok %}
+                        <div class="alert alert-warning">Dashboard messages are unavailable because the database is not fully migrated on this environment. Please run migrations.</div>
+                    {% endif %}
+                    {% for q in recent_quotes %}   <!-- edit22 - added -->
+                        <div class="mb-2">
+                        <strong>{{ q.buyer.username }}</strong>: {{ q.message }}
+                        <small class="text-muted">({{ q.created_at|date:"Y-m-d H:i" }})</small>
+>>>>>>> Stashed changes
                         </div>
                     {% empty %}
                         <p>No quotes yet.</p>

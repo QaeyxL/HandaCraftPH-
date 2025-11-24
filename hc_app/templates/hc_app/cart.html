@@ -148,18 +148,21 @@ body.cart .checkout-button:hover {
         {% for item in cart_items %}
         <div class="cart-item" data-item-id="{{ item.id }}">
             <div class="product-name">{{ item.product.name }}</div>
-            <div class="unit-price">₱{{ item.product.price|floatformat:2 }}</div>
+            <div class="unit-price">₱{{ item.item_price|default:item.product.price|floatformat:2 }}</div>
             <div class="quantity">
                 <button class="decrease-qty">-</button>
                 <span class="quantity-value">{{ item.quantity }}</span>
                 <button class="increase-qty">+</button>
             </div>
-            <div class="item-subtotal">₱{{ item.product.price|mul:item.quantity|floatformat:2 }}</div>
+            <div class="item-subtotal">₱{{ (item.item_price|default:item.product.price)|mul:item.quantity|floatformat:2 }}</div>
             <div class="actions">
                 <form method="POST" action="{% url 'hc_app:remove_from_cart' item.id %}">
                     {% csrf_token %}
                     <button type="submit" class="remove-item">Remove</button>
                 </form>
+                {% if item.customization %}
+                <div class="small text-muted mt-2">Customizations: {{ item.customization_summary }}</div>
+                {% endif %}
             </div>
         </div>
         {% endfor %}

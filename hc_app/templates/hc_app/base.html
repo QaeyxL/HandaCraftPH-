@@ -56,6 +56,10 @@
             </ul>
         </nav>
 
+        <div class="sustainability-banner" style="background:#eefaf0;padding:10px 16px;border-radius:6px;margin:12px 0;">
+            <strong>Support Filipino craft:</strong> Discover locally sourced, sustainable materials — abaca, rattan, bamboo & handwoven textiles. <a href="{% url 'hc_app:categories_list' %}">Browse categories</a>
+        </div>
+
         <div class="nav-actions">
             <form method="get" action="{% url 'hc_app:search' %}" class="d-inline">   <!-- edit22 - added -->
                 <input type="text" name="q" placeholder="Search" value="{{ request.GET.q }}">

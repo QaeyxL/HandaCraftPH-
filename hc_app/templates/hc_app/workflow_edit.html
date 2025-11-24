@@ -1,0 +1,38 @@
+{% extends 'hc_app/base.html' %}
+{% block title %}Edit Workflow Task{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Edit Task</h2>
+  <form method="post">
+    {% csrf_token %}
+    {{ form.non_field_errors }}
+    <div class="mb-3">
+      <label class="form-label">Title</label>
+      {{ form.title }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Product (optional)</label>
+      {{ form.product }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Order Item (optional)</label>
+      {{ form.order_item }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Due date</label>
+      {{ form.due_date }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Notes</label>
+      {{ form.notes }}
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Status</label>
+      {{ form.status }}
+    </div>
+    <button class="btn btn-primary" type="submit">Save</button>
+    <a class="btn btn-secondary" href="{% url 'hc_app:dashboard' %}">Cancel</a>
+  </form>
+</div>
+{% endblock %}

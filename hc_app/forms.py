@@ -2,6 +2,21 @@ from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import AuthenticationForm
 from .models import Product, Category, ProductImage, UserProfile
+from .models import SellerWorkflowTask
+
+
+class SellerWorkflowForm(forms.ModelForm):
+    class Meta:
+        model = SellerWorkflowTask
+        fields = ['title', 'product', 'order_item', 'due_date', 'notes', 'status']
+        widgets = {
+            'due_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'notes': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'product': forms.Select(attrs={'class': 'form-select'}),
+            'order_item': forms.Select(attrs={'class': 'form-select'}),
+        }
 
 
 class RegisterForm(forms.ModelForm):

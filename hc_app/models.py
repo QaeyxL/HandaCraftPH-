@@ -69,6 +69,10 @@ class CartItem(models.Model):
         if not self.customization:
             return ''
         try:
+<<<<<<< Updated upstream
+=======
+            # show attribute:option pairs if available
+>>>>>>> Stashed changes
             parts = []
             for k, v in (self.customization.items() if isinstance(self.customization, dict) else []):
                 if isinstance(v, list):
@@ -147,7 +151,10 @@ class AuditLog(models.Model):
     def __str__(self):
         return f"{self.get_action_display()} -> {self.target_user.username} @ {self.timestamp.isoformat()}"
 
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
 class SellerWorkflowTask(models.Model):
     STATUS_CHOICES = [
         ('pending', 'Pending'),
@@ -223,3 +230,7 @@ class ProductAttribute(models.Model):
 
     def __str__(self):
         return f"{self.product.name} - {self.attribute.name}"
+<<<<<<< Updated upstream
+=======
+                               
+>>>>>>> Stashed changes

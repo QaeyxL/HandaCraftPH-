@@ -7,8 +7,6 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 from django.contrib import messages
-from django.core.mail import send_mail
-from django.conf import settings
 from django.contrib.auth.forms import AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from twilio.rest import Client
@@ -18,6 +16,7 @@ import requests, easypost
 from easypost import EasyPostClient
 from random import choice
 from .models import Product, Category, CartItem, ProductImage, Order, OrderItem, UserProfile, Quote
+from django.db.models import Q, Sum
 from django.http import JsonResponse
 from decimal import Decimal
 from datetime import datetime, timedelta
@@ -26,6 +25,17 @@ from decouple import config  # edit22 - added
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth import login as auth_login
+from django.db import DatabaseError
+from django.db.utils import ProgrammingError
+from .models import SellerWorkflowTask
+from .forms import SellerWorkflowForm
+from django.views.decorators.http import require_POST
+from .models import Attribute, AttributeOption, ProductAttribute
+from decimal import Decimal as D
+import json
+from django.views.decorators.http import require_GET
+from django.contrib.admin.views.decorators import staff_member_required
+from django.db.models import Count
 
 #twilio whatsapp message code template
 def send_whatsapp_message(to_number, message_body):
@@ -146,9 +156,7 @@ def login_view(request):
         form = AuthenticationForm()
     return render(request, 'hc_app/login.html', {'form': form, 'quote': quote})
 
-@login_required
-def home_view(request):
-    return render(request, 'hc_app/home.html')
+# home_view is defined later with categories/products context — keep the consolidated version below
 
 @login_required
 def sell(request):
@@ -184,15 +192,17 @@ def sell(request):
          'user_products': user_products}
     )
 
-# edit22 - remove def catalog(request):
-    products = Product.objects.all()
-    return render(request, 'hc_app/catalog.html', {'products': products})
+# catalog is implemented below as `catalog(request)` (edited by edit22)
 
 def catalog(request):   # edit22 - edited
     products = Product.objects.all()
     category = request.GET.get("category")
     if category:
-        products = products.filter(category__name=category)
+        try:
+            cat_id = int(category)
+            products = products.filter(category_id=cat_id)
+        except (ValueError, TypeError):
+            products = products.filter(Q(category__slug__iexact=category) | Q(category__name__iexact=category))
 
     # Provide categories to populate the filter dropdown
     categories = Category.objects.all()
@@ -218,6 +228,109 @@ def product_detail(request, pk):
     related = Product.objects.filter(category=product.category).exclude(id=product.id)[:4]
     return render(request, 'hc_app/product_detail.html', {'product': product, 'related_products': related})
 
+
+@require_GET
+def product_attributes_api(request, pk):
+    """Return attributes and options for a product as JSON."""
+    product = get_object_or_404(Product, id=pk)
+    attrs = []
+    for pa in product.product_attributes.select_related('attribute').all():
+        attr = pa.attribute
+        options = []
+        for opt in attr.options.all():
+            options.append({
+                'id': opt.id,
+                'value': opt.value,
+                'price_modifier': str(opt.price_modifier),
+                'modifier_type': opt.modifier_type,
+                'extra': opt.extra or {},
+            })
+        attrs.append({
+            'id': attr.id,
+            'name': attr.name,
+            'slug': attr.slug,
+            'type': attr.type,
+            'required': pa.required,
+            'options': options,
+        })
+    return JsonResponse({'attributes': attrs})
+
+
+@require_POST
+def calculate_custom_price(request):
+    """Accepts JSON payload with product_id and selected option ids to compute custom price.
+
+    POST body: {'product_id': 1, 'selected_options': [opt_id,...], 'size_value': optional}
+    """
+    try:
+        payload = json.loads(request.body.decode('utf-8'))
+    except Exception:
+        payload = request.POST.dict() if request.POST else {}
+
+    product_id = payload.get('product_id') or request.POST.get('product_id')
+    selected = payload.get('selected_options') or request.POST.getlist('selected_options')
+    size_value = payload.get('size_value') or request.POST.get('size_value')
+
+    product = get_object_or_404(Product, id=product_id)
+    base = D(str(product.price))
+    add_sum = D('0')
+    mul_factor = D('1')
+
+    if selected:
+        # selected may be list of strings
+        for s in selected:
+            try:
+                opt = AttributeOption.objects.get(id=int(s))
+            except Exception:
+                continue
+            pm = D(str(opt.price_modifier or 0))
+            if opt.modifier_type == 'add':
+                add_sum += pm
+            else:
+                # multiplicative factor stored as multiplier (e.g., 1.10 for +10%)
+                mul_factor *= pm
+
+    # size_value handling: if numeric and product has size-based pricing rules, add simple proportional logic
+    if size_value:
+        try:
+            sv = D(str(size_value))
+            # naive size pricing: price increases linearly (developer can replace with rules)
+            # e.g., if size_value represents area multiplier
+            add_sum += (sv - D('1')) * base
+        except Exception:
+            pass
+
+    final = (base + add_sum) * mul_factor
+    return JsonResponse({'base': str(base), 'final': str(final)})
+
+
+def compute_custom_price_for_product(product, selected_option_ids=None, size_value=None):
+    """Helper: compute final price Decimal for a product given selected option ids (list) and optional numeric size_value."""
+    base = D(str(product.price))
+    add_sum = D('0')
+    mul_factor = D('1')
+    if selected_option_ids:
+        for s in selected_option_ids:
+            try:
+                opt = AttributeOption.objects.get(id=int(s))
+            except Exception:
+                continue
+            pm = D(str(opt.price_modifier or 0))
+            if opt.modifier_type == 'add':
+                add_sum += pm
+            else:
+                mul_factor *= pm
+
+    if size_value:
+        try:
+            sv = D(str(size_value))
+            add_sum += (sv - D('1')) * base
+        except Exception:
+            pass
+
+    final = (base + add_sum) * mul_factor
+    return final
+
 def edit_product(request, pk):
     product = Product.objects.get(id=pk)
     if request.method == 'POST':
@@ -229,15 +342,7 @@ def edit_product(request, pk):
         form = ProductForm(instance=product)
     return render(request, 'hc_app/edit_product.html', {'form': form})
 
-@login_required
-def delete_product(request, product_id):
-    product = get_object_or_404(Product, id=product_id, seller=request.user)
-    
-    if request.method == 'POST':
-        product.delete()
-        return redirect('hc_app:sell') 
-
-    return redirect('hc_app:sell')
+# delete_product is implemented later with permission checks; earlier duplicate removed
 
 def category_view(request, category_id):
     category = get_object_or_404(Category, id=category_id)
@@ -260,14 +365,61 @@ def home_view(request):
 @login_required
 def add_to_cart(request, product_id):
     product = get_object_or_404(Product, id=product_id)
-    cart_item, created = CartItem.objects.get_or_create(user=request.user, product=product)
-    if not created:
-        cart_item.quantity += 1
-        cart_item.save()
+    # Accept optional customization JSON (from product page customizer)
+    customization = None
+    item_price = None
+    if request.method == 'POST':
+        # customization may be sent as JSON string in POST or via AJAX body
+        try:
+            if request.POST.get('customization'):
+                customization = json.loads(request.POST.get('customization'))
+        except Exception:
+            customization = None
 
-    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':  
+    # If customization provided, try to match existing cart item for same user/product/customization
+    if customization:
+        # look for cart items with identical customization
+        existing = CartItem.objects.filter(user=request.user, product=product)
+        matched = None
+        for it in existing:
+            try:
+                if it.customization == customization:
+                    matched = it
+                    break
+            except Exception:
+                continue
+        if matched:
+            cart_item = matched
+            cart_item.quantity += 1
+            cart_item.save()
+        else:
+            # compute item_price using helper
+            selected = []
+            size_value = None
+            # gather selected option ids if present
+            for v in (customization.values() if isinstance(customization, dict) else []):
+                if isinstance(v, list):
+                    selected.extend(v)
+                else:
+                    try:
+                        # maybe numeric
+                        size_value = v
+                    except Exception:
+                        pass
+            try:
+                item_price = compute_custom_price_for_product(product, selected_option_ids=selected, size_value=size_value)
+            except Exception:
+                item_price = product.price
+            cart_item = CartItem.objects.create(user=request.user, product=product, quantity=1, customization=customization, item_price=item_price)
+    else:
+        cart_item, created = CartItem.objects.get_or_create(user=request.user, product=product, customization__isnull=True)
+        if not created:
+            cart_item.quantity += 1
+            cart_item.save()
+
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         count = CartItem.objects.filter(user=request.user).count()
-        return JsonResponse({'count': count, 'item_quantity': cart_item.quantity})
+        return JsonResponse({'count': count, 'item_quantity': cart_item.quantity, 'item_price': float(cart_item.item_price) if cart_item.item_price else float(product.price)})
 
     return redirect('hc_app:cart_view')
 
@@ -302,7 +454,8 @@ def cart_view(request):
 
     total = 0
     for item in cart_items:
-        total += item.product.price * item.quantity 
+        unit = item.item_price if (item.item_price is not None) else item.product.price
+        total += unit * item.quantity 
 
     return render(request, 'hc_app/cart.html', {
         'cart_items': cart_items,
@@ -328,11 +481,12 @@ def update_cart(request, item_id):
                 cart_item.save()
             else:
                 cart_item.delete()
-                cart_total = sum(item.product.price * item.quantity for item in CartItem.objects.filter(user=request.user)) # recalcalculate cart total if item deleted
+                cart_total = sum((item.item_price if item.item_price is not None else item.product.price) * item.quantity for item in CartItem.objects.filter(user=request.user)) # recalculate cart total if item deleted
                 return JsonResponse({"success": True, "quantity": 0, "cart_total": float(cart_total), "item_subtotal": 0})
 
-        item_subtotal = cart_item.product.price * cart_item.quantity
-        cart_total = sum(item.product.price * item.quantity for item in CartItem.objects.filter(user=request.user))
+        unit_price = cart_item.item_price if cart_item.item_price is not None else cart_item.product.price
+        item_subtotal = unit_price * cart_item.quantity
+        cart_total = sum((item.item_price if item.item_price is not None else item.product.price) * item.quantity for item in CartItem.objects.filter(user=request.user))
 
         return JsonResponse({
             "success": True,
@@ -624,10 +778,62 @@ def dashboard_view(request):
         "recent_orders": recent_orders,
         "user_products": user_products,   # edit22 - edited "user_products": request.user.products.all()
         "users": User.objects.exclude(id=request.user.id),   # edit22 - added
-        "recent_quotes": Quote.objects.filter(seller=request.user).order_by("-created_at")[:20],  # edit22 - added
+        "recent_quotes": [],
         "statuses": statuses,  # edit22 - added
-        }
+        "categories": Category.objects.order_by('name').all(),
+    }
+    # Try to load recent quotes, but don't crash the whole view if the table is missing or DB errors occur.
+    try:
+        context["recent_quotes"] = Quote.objects.filter(seller=request.user).order_by("-created_at")[:20]
+        context["db_ok"] = True
+    except (ProgrammingError, DatabaseError) as e:
+        # DB might not have the table applied (migrations not run) or other DB issues.
+        context["recent_quotes"] = []
+        context["db_ok"] = False
+        context["db_error_message"] = str(e)
+    # Seller workflow tasks
+    try:
+        context['workflow_tasks'] = SellerWorkflowTask.objects.filter(seller=request.user).order_by('due_date')
+    except Exception:
+        context['workflow_tasks'] = []
     return render(request, "hc_app/dashboard.html", context)   # edit22 - add context
+
+
+@login_required
+@require_POST
+def workflow_create(request):
+    form = SellerWorkflowForm(request.POST)
+    if form.is_valid():
+        task = form.save(commit=False)
+        task.seller = request.user
+        task.save()
+        messages.success(request, 'Workflow task created.')
+    else:
+        messages.error(request, 'Failed to create workflow task. Please check the input.')
+    return redirect('hc_app:dashboard')
+
+
+@login_required
+def workflow_update(request, task_id):
+    task = get_object_or_404(SellerWorkflowTask, id=task_id, seller=request.user)
+    if request.method == 'POST':
+        form = SellerWorkflowForm(request.POST, instance=task)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Workflow task updated.')
+            return redirect('hc_app:dashboard')
+    else:
+        form = SellerWorkflowForm(instance=task)
+    return render(request, 'hc_app/workflow_edit.html', {'form': form, 'task': task})
+
+
+@login_required
+@require_POST
+def workflow_delete(request, task_id):
+    task = get_object_or_404(SellerWorkflowTask, id=task_id, seller=request.user)
+    task.delete()
+    messages.success(request, 'Workflow task deleted.')
+    return redirect('hc_app:dashboard')
 
 
 @login_required
@@ -636,29 +842,171 @@ def dashboard_stats(request):
 
     Response shape: { customersTotal: int, ordersCount: int }
     """
-    total_orders = Order.objects.filter(seller=request.user).count()
-    total_customers = Order.objects.filter(seller=request.user).values('buyer').distinct().count()
-    return JsonResponse({
-        'customersTotal': total_customers,
-        'ordersCount': total_orders,
-    })
+    # Optional category filter (accept id or slug/name)
+    category_param = request.GET.get('category')
+    cat_filter = None
+    if category_param:
+        try:
+            cat_filter = int(category_param)
+        except Exception:
+            # try slug or name
+            cat_qs = Category.objects.filter(Q(slug__iexact=category_param) | Q(name__iexact=category_param)).first()
+            if cat_qs:
+                cat_filter = cat_qs.id
+
+    try:
+        total_orders = Order.objects.filter(seller=request.user).count()
+        total_customers = Order.objects.filter(seller=request.user).values('buyer').distinct().count()
+        in_cart_total = CartItem.objects.filter(product__seller=request.user).count()
+
+        # monthly sales for the last 6 months (seller-owned orders)
+        now = timezone.now()
+        monthly = []
+        months = []
+        for i in range(5, -1, -1):
+            m_date = (now - timedelta(days=now.day-1)).replace(day=1) - timedelta(days=30*i)
+            # normalize month/year
+            yr = m_date.year
+            mo = m_date.month
+            months.append((yr, mo))
+
+        for yr, mo in months:
+            if cat_filter:
+                # sum orderitems subtotal for this seller and category
+                s = OrderItem.objects.filter(order__seller=request.user, product__category__id=cat_filter, order__created_at__year=yr, order__created_at__month=mo).aggregate(total=Sum('subtotal'))
+                total = s.get('total') or 0
+            else:
+                s = Order.objects.filter(seller=request.user, created_at__year=yr, created_at__month=mo).aggregate(total=Sum('total'))
+                total = s.get('total') or 0
+            monthly.append({'year': yr, 'month': mo, 'total': float(total)})
+
+        return JsonResponse({
+            'customersTotal': total_customers,
+            'ordersCount': total_orders,
+            'inCartTotal': in_cart_total,
+            'monthly_sales': monthly,
+            'db_ok': True,
+        })
+    except (ProgrammingError, DatabaseError) as e:
+        # If the Quote/order tables aren't present or DB inaccessible, return safe defaults
+        return JsonResponse({'customersTotal': 0, 'ordersCount': 0, 'inCartTotal': 0, 'monthly_sales': [], 'db_ok': False, 'error': str(e)})
 
 
 @login_required
 def dashboard_quotes(request, buyer_id):
     """Return quotes/messages sent by a given buyer to the logged-in seller."""
-    qs = Quote.objects.filter(seller=request.user, buyer__id=buyer_id).order_by('-created_at')
-    data = []
-    for q in qs:
-        data.append({
-            'id': q.id,
-            'buyer_username': q.buyer.username,
-            'message': q.message,
-            'product_id': q.product.id if q.product else None,
-            'product_name': q.product.name if q.product else None,
-            'created_at': q.created_at.isoformat(),
-        })
-    return JsonResponse({'quotes': data})
+    try:
+        qs = Quote.objects.filter(seller=request.user, buyer__id=buyer_id).order_by('-created_at')
+        data = []
+        for q in qs:
+            data.append({
+                'id': q.id,
+                'buyer_username': q.buyer.username,
+                'message': q.message,
+                'product_id': q.product.id if q.product else None,
+                'product_name': q.product.name if q.product else None,
+                'created_at': q.created_at.isoformat(),
+            })
+        return JsonResponse({'quotes': data, 'db_ok': True})
+    except (ProgrammingError, DatabaseError) as e:
+        return JsonResponse({'quotes': [], 'db_ok': False, 'error': str(e)})
+
+
+@login_required
+def dashboard_cart_activity(request):
+    """Return recent cart additions for this seller (buyer username, product, qty, added_at)."""
+    try:
+        qs = CartItem.objects.filter(product__seller=request.user).order_by('-added_at')[:20]
+        data = []
+        for item in qs:
+            data.append({
+                'id': item.id,
+                'buyer_username': item.user.username,
+                'product_id': item.product.id,
+                'product_name': item.product.name,
+                'quantity': item.quantity,
+                'added_at': item.added_at.isoformat(),
+            })
+        return JsonResponse({'cart_activity': data, 'db_ok': True})
+    except (ProgrammingError, DatabaseError) as e:
+        return JsonResponse({'cart_activity': [], 'db_ok': False, 'error': str(e)})
+
+
+@staff_member_required
+def admin_dashboard(request):
+    """Render a simple admin-facing dashboard that will fetch data via API dynamically."""
+    cats = Category.objects.order_by('name').all()
+    return render(request, 'hc_app/admin_dashboard.html', {'categories': cats})
+
+
+@staff_member_required
+@require_GET
+def admin_sales_api(request):
+    """Return sales/bookings aggregates. Query params: start_date, end_date (YYYY-MM-DD), category (id).
+
+    Response: { total_sales: float, total_orders: int, by_category: [{category, total}], timeseries: [{year, month, total}] }
+    """
+    start = request.GET.get('start_date')
+    end = request.GET.get('end_date')
+    cat = request.GET.get('category')
+    q = Order.objects.all()
+    # date filters
+    try:
+        if start:
+            sd = datetime.strptime(start, '%Y-%m-%d')
+            q = q.filter(created_at__date__gte=sd.date())
+        if end:
+            ed = datetime.strptime(end, '%Y-%m-%d')
+            q = q.filter(created_at__date__lte=ed.date())
+    except Exception:
+        pass
+
+    if cat:
+        try:
+            cid = int(cat)
+            q = q.filter(items__product__category__id=cid)
+        except Exception:
+            # try slug/name
+            cq = Category.objects.filter(Q(slug__iexact=cat) | Q(name__iexact=cat)).first()
+            if cq:
+                q = q.filter(items__product__category=cq)
+
+    # total sales and orders
+    total_sales = q.aggregate(total=Sum('total')).get('total') or 0
+    total_orders = q.distinct().count()
+
+    # by category
+    by_cat_qs = OrderItem.objects.filter(order__in=q).values('product__category__id', 'product__category__name').annotate(total=Sum('subtotal')).order_by('-total')
+    by_category = []
+    for b in by_cat_qs:
+        by_category.append({'category_id': b['product__category__id'], 'category': b['product__category__name'], 'total': float(b['total'] or 0)})
+
+    # timeseries: monthly sums for selected range (or last 6 months by default)
+    timeseries = []
+    if start and end:
+        # build months between start and end
+        try:
+            sd = datetime.strptime(start, '%Y-%m-%d')
+            ed = datetime.strptime(end, '%Y-%m-%d')
+            cur = sd.replace(day=1)
+            while cur <= ed:
+                s = q.filter(created_at__year=cur.year, created_at__month=cur.month).aggregate(total=Sum('total'))
+                timeseries.append({'year': cur.year, 'month': cur.month, 'total': float(s.get('total') or 0)})
+                # advance month
+                nxt = cur + timedelta(days=32)
+                cur = nxt.replace(day=1)
+        except Exception:
+            pass
+    else:
+        now = timezone.now()
+        for i in range(5, -1, -1):
+            m_date = (now - timedelta(days=now.day-1)).replace(day=1) - timedelta(days=30*i)
+            yr = m_date.year
+            mo = m_date.month
+            s = q.filter(created_at__year=yr, created_at__month=mo).aggregate(total=Sum('total'))
+            timeseries.append({'year': yr, 'month': mo, 'total': float(s.get('total') or 0)})
+
+    return JsonResponse({'total_sales': float(total_sales), 'total_orders': total_orders, 'by_category': by_category, 'timeseries': timeseries})
 
 
 def _create_demo_user(username, password, email='', is_staff=False, is_superuser=False):
@@ -979,14 +1327,19 @@ def update_order_status(request, order_id):    # edit22 - added
 def search_view(request):   # edit22 - added
     q = request.GET.get('q', '').strip()
     category = request.GET.get('category', '').strip()
-    results = Product.objects.none()
+    # build base queryset
     if q:
         results = Product.objects.filter(name__icontains=q) | Product.objects.filter(description__icontains=q)
     else:
         results = Product.objects.all()
 
+    # tolerant category filter: accept id, slug, or name
     if category:
-        results = results.filter(category__name=category)
+        try:
+            cat_id = int(category)
+            results = results.filter(category_id=cat_id)
+        except (ValueError, TypeError):
+            results = results.filter(Q(category__slug__iexact=category) | Q(category__name__iexact=category))
 
     return render(request, 'hc_app/search_results.html', {
         'query': q,

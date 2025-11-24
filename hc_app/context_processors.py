@@ -28,7 +28,16 @@ def is_seller_processor(request):
                 is_seller = True
             else:
                 profile = UserProfile.objects.filter(user=request.user).first()
-                is_seller = bool(profile and getattr(profile, 'is_seller', False))
+                # Primary signal: explicit flag on the profile
+                if profile and getattr(profile, 'is_seller', False):
+                    is_seller = True
+                else:
+                    # Fallback: treat users who own products as sellers (helps deployments where flag wasn't set)
+                    try:
+                        is_seller = Product.objects.filter(seller=request.user).exists()
+                    except Exception:
+                        # If product lookup fails for any reason, keep conservative default
+                        is_seller = False
         except Exception:
             is_seller = False
     return {'is_seller': is_seller}
