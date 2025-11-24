@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from datetime import date
 from django.contrib.auth import get_user_model
 
 UserModel = get_user_model()
@@ -29,14 +30,18 @@ class Product(models.Model):
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     description = models.TextField()
     image = models.ImageField(upload_to='products/images/', blank=True, null=True)
-    # video = models.FileField(upload_to='products/videos/', blank=True, null=True)
-    seller = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
     seller = models.ForeignKey(User, on_delete=models.CASCADE, related_name='products')
     weight = models.DecimalField(max_digits=6, decimal_places=2, help_text="Weight in ounces", default=0)
+    stock = models.PositiveIntegerField(default=0) # inventory 
     length = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     width = models.DecimalField(max_digits=6, decimal_places=2, default=0)
     height = models.DecimalField(max_digits=6, decimal_places=2, default=0)
+    seller_street = models.CharField(max_length=200, blank=True, null=True)
+    seller_city = models.CharField(max_length=100, blank=True, null=True)
+    seller_state = models.CharField(max_length=100, blank=True, null=True)
+    seller_zip_code = models.CharField(max_length=20, blank=True, null=True)
+    seller_country = models.CharField(max_length=50, default='PH')
 
     def __str__(self):
         return self.name
@@ -62,13 +67,25 @@ class Order(models.Model):
     payment_method = models.CharField(max_length=50)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=50, default='Pending')
-    shipping_label_url = models.URLField(blank=True, null=True) 
-    tracking_code = models.CharField(max_length=100, blank=True, null=True)
+    estimated_delivery = models.DateField(default=date.today)
 
+    buyer_street = models.CharField(max_length=200, blank=True, null=True)
+    buyer_city = models.CharField(max_length=100, blank=True, null=True)
+    buyer_state = models.CharField(max_length=100, blank=True, null=True)
+    buyer_zip_code = models.CharField(max_length=20, blank=True, null=True)
+    buyer_country = models.CharField(max_length=50, blank=True, null=True)
+
+    seller_street = models.CharField(max_length=200, blank=True, null=True)
+    seller_city = models.CharField(max_length=100, blank=True, null=True)
+    seller_state = models.CharField(max_length=100, blank=True, null=True)
+    seller_zip_code = models.CharField(max_length=20, blank=True, null=True)
+    seller_country = models.CharField(max_length=50, blank=True, null=True)
 
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product_name = models.CharField(max_length=255, default='Unknown Product')
+    product_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     quantity = models.PositiveIntegerField()
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
 

@@ -14,14 +14,24 @@
             <h4>Items:</h4>
             <ul>
                 {% for item in order.items.all %}
-                    <li>{{ item.product.name }} x {{ item.quantity }} - ₱{{ item.subtotal }}</li>
+                    <li>{{ item.product_name }} x {{ item.quantity }} - ₱{{ item.subtotal }}</li>
                 {% endfor %}
             </ul>
 
-            {% if order.seller.userprofile %}
-            <p>Seller Address: {{ order.seller.userprofile.address_line1 }}, 
-               {{ order.seller.userprofile.city }}, {{ order.seller.userprofile.state }},
-               {{ order.seller.userprofile.postal_code }}, {{ order.seller.userprofile.country }}</p>
+            {% with first_item=order.items.all.0 %}
+            <p>Seller Address: {{ order.seller_street }}, 
+                {{ order.seller_city }}, 
+                {{ order.seller_state }}, 
+                {{ order.seller_zip_code }}, 
+                {{ order.seller_country }}
+            </p>
+            {% endwith %}
+
+
+            {% if order.buyer_street %}
+            <p>Buyer Address: {{ order.buyer_street }}, 
+               {{ order.buyer_city }}, {{ order.buyer_state }},
+               {{ order.buyer_zip_code }}, {{ order.buyer_country }}</p>
             {% endif %}
 
             <form method="POST" action="{% url 'hc_app:delete_order' order.id %}">
