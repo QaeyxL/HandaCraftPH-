@@ -212,3 +212,6 @@ API uses OpenStreetMap data. This is used to verify and/or suggest addresses to 
 - **EasyPost API**
   Given the limitations for the testing version, the API will only work if either the buyer or seller is from the United States of America. A flat rate of Php 100 is set for locations based in the Philippines.
 
+## Admin test credentials
+The Username and Password are in the submission bin comment box.
+
