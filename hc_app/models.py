@@ -64,8 +64,6 @@ class Order(models.Model):
     payment_method = models.CharField(max_length=50)
     created_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=50, default='Pending')
-    shipping_label_url = models.URLField(blank=True, null=True) 
-    tracking_code = models.CharField(max_length=100, blank=True, null=True)
     estimated_delivery = models.DateField(default=date.today)
 
     buyer_street = models.CharField(max_length=200, blank=True, null=True)
@@ -83,6 +81,8 @@ class Order(models.Model):
 class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    product_name = models.CharField(max_length=255, default='Unknown Product')
+    product_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     quantity = models.PositiveIntegerField()
     subtotal = models.DecimalField(max_digits=10, decimal_places=2)
                                

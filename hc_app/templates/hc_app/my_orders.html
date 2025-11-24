@@ -14,16 +14,16 @@
             <h4>Items:</h4>
             <ul>
                 {% for item in order.items.all %}
-                    <li>{{ item.product.name }} x {{ item.quantity }} - ₱{{ item.subtotal }}</li>
+                    <li>{{ item.product_name }} x {{ item.quantity }} - ₱{{ item.subtotal }}</li>
                 {% endfor %}
             </ul>
 
             {% with first_item=order.items.all.0 %}
-            <p>Seller Address: {{ first_item.product.street }}, 
-                {{ first_item.product.city }}, 
-                {{ first_item.product.state }}, 
-                {{ first_item.product.zip_code }}, 
-                {{ first_item.product.country }}
+            <p>Seller Address: {{ order.seller_street }}, 
+                {{ order.seller_city }}, 
+                {{ order.seller_state }}, 
+                {{ order.seller_zip_code }}, 
+                {{ order.seller_country }}
             </p>
             {% endwith %}
 

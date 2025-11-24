@@ -122,7 +122,6 @@ def login_view(request):
         form = AuthenticationForm()
     return render(request, 'hc_app/login.html', {'form': form, 'quote': quote})
 
-# --- Home view ---
 @login_required
 def home_view(request):
     return render(request, 'hc_app/home.html')
@@ -281,8 +280,7 @@ def update_cart(request, item_id):
                 cart_item.save()
             else:
                 cart_item.delete()
-                # recalc cart total if item deleted
-                cart_total = sum(item.product.price * item.quantity for item in CartItem.objects.filter(user=request.user))
+                cart_total = sum(item.product.price * item.quantity for item in CartItem.objects.filter(user=request.user)) # recalcalculate cart total if item deleted
                 return JsonResponse({"success": True, "quantity": 0, "cart_total": float(cart_total), "item_subtotal": 0})
 
         item_subtotal = cart_item.product.price * cart_item.quantity
@@ -313,7 +311,6 @@ easypost_client = EasyPostClient(settings.EASYPOST_API_KEY)
 def checkout_view(request):
     cart_items = CartItem.objects.filter(user=request.user)
 
-    # Group cart by seller
     seller_totals = {}
     shipping_flat_rate = Decimal('100.00')
     for item in cart_items:
@@ -329,16 +326,13 @@ def checkout_view(request):
         seller_totals[seller.id]["items"].append(item)
         seller_totals[seller.id]["subtotal"] += item.product.price * item.quantity
 
-    # Ensure buyer profile exists
     profile, _ = UserProfile.objects.get_or_create(user=request.user)
 
-    # Check if this is an AJAX request
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     
     if request.method == "POST":
         form = BuyerAddressForm(request.POST, instance=profile)
         
-        # AJAX SHIPPING CALCULATION ONLY - Return JSON
         if is_ajax and "calculate_shipping" in request.POST:
             print("=== AJAX Shipping Calculation ===")
             
@@ -349,11 +343,9 @@ def checkout_view(request):
                     seller_profile, _ = UserProfile.objects.get_or_create(user=data["seller"])
                     to_country = temp_profile.country.strip().lower().replace(" ", "")
 
-                    # Philippines flat rate
                     if to_country in ["philippines", "ph"]:
                         shipping_cost = shipping_flat_rate
 
-                    # USA -> use EasyPost
                     elif to_country in ["usa", "unitedstates", "unitedstatesofamerica", "us"]:
                         try:
                             to_address = easypost_client.address.create(
@@ -424,7 +416,6 @@ def checkout_view(request):
                     "error": "Please fill out all required fields correctly."
                 })
         
-        # PLACE ORDER - Regular form submission (NOT AJAX)
         elif "place_order" in request.POST:
             print("=== Place Order ===")
             payment_method = request.POST.get("payment_method", "")
@@ -472,6 +463,8 @@ def checkout_view(request):
                             OrderItem.objects.create(
                                 order=order,
                                 product=item.product,
+                                product_name=item.product.name,
+                                product_price=item.product.price,
                                 quantity=item.quantity,
                                 subtotal=item.product.price * item.quantity
                             )

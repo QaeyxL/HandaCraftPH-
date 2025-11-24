@@ -209,7 +209,6 @@ body.checkout .grand-total {
     margin-top: 20px;
 }
 
-/* Messages */
 body.checkout .messages {
   margin: 10px 0;
 }
@@ -229,7 +228,6 @@ body.checkout .messages p.error {
   border: 1px solid #f5c6cb;
 }
 
-/* Autocomplete */
 body.checkout .autocomplete-dropdown {
     position: absolute;
     background-color: #fff !important;
@@ -285,7 +283,6 @@ body.checkout #id_street.unverified { border: 2px solid #f44336; }
     <form id="checkout-form" method="POST" action="{% url 'hc_app:checkout' %}">
         {% csrf_token %}
 
-        <!-- Delivery Address -->
         <div class="delivery-address">
             <div class="address-header">
                 <img src="{% static 'hc_app/images/location-icon.png' %}" alt="Delivery Address Icon" class="address-icon">
@@ -306,7 +303,6 @@ body.checkout #id_street.unverified { border: 2px solid #f44336; }
             </div>
         </div>
 
-        <!-- Products -->
         <div class="products">
             <div class="products-header">
                 <img src="{% static 'hc_app/images/products-icon.png' %}" alt="Products Icon" class="products-icon">
@@ -338,7 +334,6 @@ body.checkout #id_street.unverified { border: 2px solid #f44336; }
             </div>
         </div>
 
-        <!-- Shipping -->
         <div class="shipping-option">
             <div class="shipping-header">
                 <img src="{% static 'hc_app/images/shipping-icon.png' %}" alt="Shipping Icon" class="shipping-icon">
@@ -358,12 +353,10 @@ body.checkout #id_street.unverified { border: 2px solid #f44336; }
             </div>
         </div>
 
-        <!-- Grand Total -->
         <div class="grand-total">
             <h3 id="grand-total-display">Grand Total: ₱{{ total_amount|floatformat:2 }}</h3>
         </div>
 
-        <!-- Payment -->
         <div class="payment-method">
             <div class="payment-header">Payment Method</div>
             <div class="payment-options">
@@ -389,7 +382,6 @@ body.checkout #id_street.unverified { border: 2px solid #f44336; }
 let timeout = null;
 let shippingCalculated = false;
 
-// Street autocomplete
 const streetInput = document.getElementById("id_street");
 const suggestionsDiv = document.getElementById("street-suggestions");
 const countryInput = document.getElementById("id_country");
@@ -397,7 +389,6 @@ const cityInput = document.getElementById("id_city");
 const stateInput = document.getElementById("id_state");
 const zipInput = document.getElementById("id_zip_code");
 
-// Auto-calculate shipping on page load if USA address exists
 document.addEventListener('DOMContentLoaded', function() {
     console.log("Page loaded, checking if auto-calculation needed...");
     autoCalculateShippingIfNeeded();
@@ -435,7 +426,6 @@ streetInput.addEventListener("input", function() {
                     streetInput.classList.remove("unverified");
                     streetInput.classList.add("verified");
                     
-                    // Auto-calculate shipping when address is selected
                     autoCalculateShippingIfNeeded();
                 });
                 suggestionsDiv.appendChild(div);
@@ -444,7 +434,6 @@ streetInput.addEventListener("input", function() {
     }, 300);
 });
 
-// Auto-calculate shipping when address fields are filled
 function autoCalculateShippingIfNeeded() {
     clearTimeout(timeout);
     timeout = setTimeout(() => {
@@ -452,22 +441,18 @@ function autoCalculateShippingIfNeeded() {
         const isUSA = country.includes('united states') || country === 'usa' || country === 'us';
         const isPhilippines = country.includes('philippines') || country === 'ph';
         
-        // Check required fields based on country
         let allFieldsFilled;
         if (isUSA) {
-            // USA requires all fields including state and zip
             allFieldsFilled = streetInput.value.trim() && 
                             cityInput.value.trim() && 
                             stateInput.value.trim() && 
                             zipInput.value.trim() && 
                             countryInput.value.trim();
         } else if (isPhilippines) {
-            // Philippines only requires street, city, and country
             allFieldsFilled = streetInput.value.trim() && 
                             cityInput.value.trim() && 
                             countryInput.value.trim();
         } else {
-            // Other countries require all fields
             allFieldsFilled = streetInput.value.trim() && 
                             cityInput.value.trim() && 
                             countryInput.value.trim();
@@ -481,7 +466,6 @@ function autoCalculateShippingIfNeeded() {
             shippingCalculated: shippingCalculated
         });
         
-        // Auto-calculate for both USA and Philippines
         if (allFieldsFilled && (isUSA || isPhilippines) && !shippingCalculated) {
             if (isUSA) {
                 console.log("✓ USA address detected, calculating EasyPost rates...");
@@ -493,35 +477,32 @@ function autoCalculateShippingIfNeeded() {
     }, 300);
 }
 
-// Add listeners to all address fields for auto-calculation
 [streetInput, cityInput, stateInput, zipInput, countryInput].forEach(input => {
     if (input) {
         input.addEventListener('change', function() {
-            shippingCalculated = false; // Reset flag when address changes
+            shippingCalculated = false;
             autoCalculateShippingIfNeeded();
         });
         input.addEventListener('blur', function() {
-            shippingCalculated = false; // Reset flag when leaving field
+            shippingCalculated = false; 
             autoCalculateShippingIfNeeded();
         });
     }
 });
 
-// Payment selection
 function selectPayment(event, method) {
     document.getElementById("payment_method").value = method;
     document.querySelectorAll(".payment-button").forEach(btn => btn.classList.remove("active"));
     event.target.classList.add("active");
 }
 
-// Calculate shipping via AJAX
 const calculateBtn = document.getElementById("calculate-shipping-btn");
 if (calculateBtn) {
     calculateBtn.addEventListener("click", function(e) {
         e.preventDefault();
         e.stopPropagation();
         console.log("Recalculate button clicked!");
-        shippingCalculated = false; // Reset flag to allow recalculation
+        shippingCalculated = false; 
         calculateShipping();
     });
 }
@@ -533,7 +514,6 @@ function calculateShipping() {
     const formData = new FormData(form);
     formData.append("calculate_shipping", "true");
     
-    // Log form data
     for (let pair of formData.entries()) {
         console.log(pair[0] + ': ' + pair[1]);
     }
@@ -558,7 +538,7 @@ function calculateShipping() {
     })
     .then(text => {
         console.log("=== Raw response received ===");
-        console.log(text.substring(0, 200) + "..."); // Log first 200 chars
+        console.log(text.substring(0, 200) + "...");
         shippingStatus.style.display = "none";
         
         let data;
@@ -576,7 +556,6 @@ function calculateShipping() {
         if (data.success) {
             console.log("=== Success! Updating UI ===");
             
-            // Update shipping costs for each seller
             if (data.seller_totals && Array.isArray(data.seller_totals)) {
                 console.log(`Found ${data.seller_totals.length} sellers to update`);
                 
@@ -584,7 +563,6 @@ function calculateShipping() {
                     console.log(`\nProcessing seller ID: "${seller.id}"`);
                     console.log(`Shipping cost: "${seller.shipping}"`);
                     
-                    // Find the shipping cost element for this seller
                     const selector = `[data-shipping-cost="${seller.id}"]`;
                     console.log(`Looking for element with selector: ${selector}`);
                     
@@ -597,7 +575,6 @@ function calculateShipping() {
                         costSpan.textContent = "₱" + newCost;
                         console.log(`✓ Updated from ${oldValue} to ₱${newCost}`);
                         
-                        // Add visual feedback
                         costSpan.style.backgroundColor = '#4CAF50';
                         costSpan.style.color = 'white';
                         costSpan.style.padding = '2px 5px';
@@ -620,7 +597,6 @@ function calculateShipping() {
                 console.error("seller_totals not found or not an array:", data.seller_totals);
             }
             
-            // Update grand total
             if (data.total_amount) {
                 const grandTotal = parseFloat(data.total_amount).toFixed(2);
                 const grandTotalEl = document.getElementById("grand-total-display");
@@ -653,10 +629,9 @@ function showMessage(text, type) {
     messagesContainer.innerHTML = "";
     messagesContainer.appendChild(messageDiv);
     
-    // Auto-remove after 3 seconds
     setTimeout(() => {
         messageDiv.remove();
-    }, 3000);
+    }, 10000);
 }
 </script>
 {% endblock %}
