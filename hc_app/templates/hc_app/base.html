@@ -48,7 +48,7 @@
                         <li><a class="dropdown-item" href="{% url 'hc_app:catalog' %}">View all products</a></li>
                     </ul>
                     </li>
-                <li><a href="#">Customize</a></li>
+                <li><a href="{% url 'hc_app:customize' %}">Customize</a></li>
                 <li><a href="{% url 'hc_app:sell' %}">Sell</a></li>
                 {% if is_seller %}
                 <li><a href="{% url 'hc_app:dashboard' %}">Dashboard</a></li>

@@ -41,9 +41,23 @@ document.addEventListener('DOMContentLoaded', function() {
           const opt = document.createElement('option');
           opt.value = o.id;
           opt.textContent = o.value + (o.price_modifier && Number(o.price_modifier) ? ` (+₱${o.price_modifier})` : '');
+          if (o.extra && o.extra.description) opt.dataset.description = o.extra.description;
           select.appendChild(opt);
         });
+        // helper area to show option description
+        const optDesc = document.createElement('div');
+        optDesc.className = 'small text-muted option-desc mt-1';
         wrapper.appendChild(select);
+        wrapper.appendChild(optDesc);
+        // update description when selection changes
+        select.addEventListener('change', function() {
+          const sel = this.options[this.selectedIndex];
+          if (sel && sel.dataset && sel.dataset.description) {
+            optDesc.textContent = sel.dataset.description;
+          } else {
+            optDesc.textContent = '';
+          }
+        });
       } else if (attr.type === 'multi') {
         attr.options.forEach(o => {
           const div = document.createElement('div');
@@ -57,6 +71,13 @@ document.addEventListener('DOMContentLoaded', function() {
           lbl.className = 'form-check-label';
           lbl.setAttribute('for', chk.id);
           lbl.textContent = o.value + (o.price_modifier && Number(o.price_modifier) ? ` (+₱${o.price_modifier})` : '');
+          if (o.extra && o.extra.description) {
+            const info = document.createElement('span');
+            info.className = 'ms-2 text-muted small material-info';
+            info.textContent = 'ℹ️';
+            info.title = o.extra.description;
+            lbl.appendChild(info);
+          }
           div.appendChild(chk);
           div.appendChild(lbl);
           wrapper.appendChild(div);
@@ -77,6 +98,11 @@ document.addEventListener('DOMContentLoaded', function() {
     attrContainer.querySelectorAll('.attr-select, .attr-checkbox, .attr-numeric').forEach(el => {
       el.addEventListener('change', calculatePrice);
     });
+    // initialize Bootstrap tooltips for any material-info elements
+    try {
+      const tipEls = attrContainer.querySelectorAll('.material-info');
+      tipEls.forEach(el => { if (typeof bootstrap !== 'undefined') new bootstrap.Tooltip(el); });
+    } catch (e) {}
     calculatePrice();
   }
 

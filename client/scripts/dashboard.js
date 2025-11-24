@@ -49,6 +49,15 @@ let monthlySalesChart = null;
 let targetVsActualChart = null;
 
 function buildMonthlySalesChart(ctx, labels = [], data = []) {
+  if (typeof Chart === 'undefined') {
+    console.warn('Chart.js not available — monthly sales chart will not render.');
+    try {
+      const holder = ctx && ctx.canvas ? ctx.canvas : (document.getElementById('monthly-sales-canvas'));
+      if (holder) holder.parentElement.innerHTML = '<div class="text-muted">Chart library not loaded. Please ensure Chart.js is available.</div>';
+    } catch (e) {}
+    return null;
+  }
+
   if (monthlySalesChart) {
     monthlySalesChart.data.labels = labels;
     monthlySalesChart.data.datasets[0].data = data;
@@ -78,6 +87,15 @@ function buildMonthlySalesChart(ctx, labels = [], data = []) {
 }
 
 function buildTargetVsActualChart(ctx, target = 1000, actual = 0) {
+  if (typeof Chart === 'undefined') {
+    console.warn('Chart.js not available — target chart will not render.');
+    try {
+      const holder = ctx && ctx.canvas ? ctx.canvas : (document.getElementById('target-vs-actual-canvas'));
+      if (holder) holder.parentElement.innerHTML = '<div class="text-muted">Chart library not loaded. Please ensure Chart.js is available.</div>';
+    } catch (e) {}
+    return null;
+  }
+
   if (targetVsActualChart) {
     targetVsActualChart.data.datasets[0].data = [actual, Math.max(0, target - actual)];
     targetVsActualChart.update();
@@ -172,6 +190,11 @@ function startDashboardLivePolling() {
     fetchCartActivity();
   }, 10000);
 
+  // also refresh map points on the same interval
+  setInterval(()=>{
+    fetchMapPoints();
+  }, 10000);
+
   if (catSelect) {
     catSelect.addEventListener('change', ()=>{
       fetchDashboardStats(catSelect.value);
@@ -183,6 +206,20 @@ function startDashboardLivePolling() {
 document.addEventListener('DOMContentLoaded', ()=>{
   startDashboardLivePolling();
 });
+
+// --- Map points fetcher ---
+async function fetchMapPoints() {
+  try {
+    const base = (window.DASHBOARD_ENDPOINTS && window.DASHBOARD_ENDPOINTS.map_points) || '/dashboard/map-points/';
+    const res = await fetch(base, { cache: 'no-store' });
+    if (!res.ok) throw new Error('map points fetch failed ' + res.status);
+    const json = await res.json();
+    const pts = (json.points || []).map(p => p);
+    if (window.updateMapPoints) window.updateMapPoints(pts);
+  } catch (e) {
+    console.warn('fetchMapPoints error', e);
+  }
+}
 
 am5.ready(function() {
   try {
@@ -262,6 +299,17 @@ am5.ready(function() {
     pointSeries.data.setAll([
       { title: "Manila", customers: 20, geometry: { type: "Point", coordinates: [120.9842, 14.5995] } }
     ]);
+      // expose a reference and an updater so other code can refresh map points
+      window.__am5PointSeries = pointSeries;
+      window.updateMapPoints = function(points) {
+        try {
+          if (!window.__am5PointSeries) return;
+          // points should be array of { title, customers, geometry: { type: 'Point', coordinates: [lng, lat] } }
+          window.__am5PointSeries.data.setAll(points || []);
+          // optionally update stat panels based on points
+          try { updateStats({ points: points || [] }); } catch (e) {}
+        } catch (e) { console.warn('updateMapPoints error', e); }
+      };
     // Update dashboard stat panels (customers, orders) from map/sample data
     try {
       const points = [

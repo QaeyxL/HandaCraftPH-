@@ -39,6 +39,9 @@
           <div class="card-body">
             <h5 class="card-title">{{ product.name }}</h5>
             <p class="card-text">{{ product.description|truncatewords:20 }}</p>
+            {% if product.product_attributes.count %}
+              <span class="badge bg-success">Customizable</span>
+            {% endif %}
             <p class="card-text"><strong>₱{{ product.price }}</strong></p>
             <a href="{% url 'hc_app:product_detail' product.id %}" class="btn btn-primary">View</a>
           </div>

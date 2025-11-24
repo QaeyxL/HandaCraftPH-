@@ -1,0 +1,28 @@
+{% extends 'hc_app/base.html' %}
+{% load static %}
+{% block title %}Customize products{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width:1100px;margin-top:24px;">
+  <h2>Customize a product</h2>
+  <p>Choose a product to customize its attributes (material, size, color, and add-ons).</p>
+  <div class="row">
+    {% for product in products %}
+    <div class="col-md-4 mb-3">
+      <div class="card">
+        {% if product.image %}
+        <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+        {% endif %}
+        <div class="card-body">
+          <h5 class="card-title">{{ product.name }}</h5>
+          <p class="card-text">{{ product.description|truncatechars:100 }}</p>
+          <a href="{% url 'hc_app:product_detail' product.id %}" class="btn btn-primary">Customize</a>
+        </div>
+      </div>
+    </div>
+    {% empty %}
+      <p>No products available.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

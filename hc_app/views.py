@@ -229,6 +229,12 @@ def product_detail(request, pk):
     return render(request, 'hc_app/product_detail.html', {'product': product, 'related_products': related})
 
 
+def customize_view(request):
+    """Landing page for customization. Lists products that can be customized (have ProductAttribute entries)."""
+    products = Product.objects.filter(product_attributes__isnull=False).distinct().order_by('-created_at')[:60]
+    return render(request, 'hc_app/customize.html', {'products': products})
+
+
 @require_GET
 def product_attributes_api(request, pk):
     """Return attributes and options for a product as JSON."""
@@ -930,6 +936,56 @@ def dashboard_cart_activity(request):
         return JsonResponse({'cart_activity': data, 'db_ok': True})
     except (ProgrammingError, DatabaseError) as e:
         return JsonResponse({'cart_activity': [], 'db_ok': False, 'error': str(e)})
+
+
+@login_required
+def dashboard_map_points(request):
+    """Return geo points for map display representing recent buyers for this seller.
+
+    Response: { points: [{ title, customers, geometry: { type: 'Point', coordinates: [lng, lat] } }, ...] }
+    """
+    try:
+        qs = Order.objects.filter(seller=request.user).order_by('-created_at')[:200]
+        points = []
+        # simple city -> coords mapping for common PH cities (approximate)
+        city_coords = {
+            'manila': [120.9842, 14.5995],
+            'cebu': [123.8854, 10.3157],
+            'davao': [125.6131, 7.1907],
+            'quezon': [121.2326, 14.1035],
+            'makati': [121.0236, 14.5547]
+        }
+        for o in qs:
+            # prefer stored profile coordinates if available
+            coord = None
+            try:
+                profile = UserProfile.objects.filter(user=o.buyer).first()
+                if profile and profile.latitude is not None and profile.longitude is not None:
+                    coord = [profile.longitude, profile.latitude]
+            except Exception:
+                profile = None
+
+            # fallback to order-level city/country heuristics
+            if not coord:
+                city = (o.buyer_city or '').lower()
+                for key, val in city_coords.items():
+                    if key in city:
+                        coord = val
+                        break
+                if not coord:
+                    if (o.buyer_country or '').lower() in ['philippines', 'ph']:
+                        coord = city_coords.get('manila')
+
+            if coord:
+                title = f"{getattr(o.buyer, 'username', 'Buyer')} ({o.buyer_city or ''})"
+                points.append({
+                    'title': title,
+                    'customers': 1,
+                    'geometry': { 'type': 'Point', 'coordinates': coord }
+                })
+        return JsonResponse({'points': points, 'db_ok': True})
+    except Exception as e:
+        return JsonResponse({'points': [], 'db_ok': False, 'error': str(e)})
 
 
 @staff_member_required

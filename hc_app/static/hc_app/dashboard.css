@@ -151,14 +151,15 @@ h1 {
 
 .chat-container {
   display: flex;
+  flex-direction: column; /* stack list + window vertically for narrow right column */
   height: 520px;
 }
 
 /* Left sidebar (chat list) */
 .chat-list {
-  width: 260px;
-  min-width: 220px;
-  border-right: 1px solid #f1f5f9;
+  width: 100%;
+  border-right: none;
+  border-bottom: 1px solid #f1f5f9;
   background-color: #fbfdff;
   display: flex;
   flex-direction: column;
@@ -173,12 +174,28 @@ h1 {
   transition: background 0.12s ease-in-out;
 }
 
+.chat-user form {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.chat-user input[type="text"] {
+  flex: 1 1 auto;
+  min-width: 0; /* allow shrink inside flex */
+}
+
+.chat-user .btn {
+  flex: 0 0 auto;
+}
+
 .chat-user:hover { background: #f0f0f0; }
 .chat-user.active { background: #e9f0ff; font-weight: 600; }
 
 /* Right chat window */
 .chat-window {
-  width: calc(100% - 260px);
+  width: 100%;
   display: flex;
   flex-direction: column;
   background-color: #fff;

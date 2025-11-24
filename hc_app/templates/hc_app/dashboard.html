@@ -205,9 +205,22 @@
 <script>
     // API endpoints used by the dashboard script
     window.DASHBOARD_ENDPOINTS = {
-        stats: '{% url "hc_app:dashboard_stats" %}',
-        cart_activity: '{% url "hc_app:dashboard_cart_activity" %}'
+            stats: '{% url "hc_app:dashboard_stats" %}',
+            cart_activity: '{% url "hc_app:dashboard_cart_activity" %}',
+            map_points: '{% url "hc_app:dashboard_map_points" %}'
     };
 </script>
-<script src="{% static 'hc_app/scripts/dashboard.js' %}"></script>
+    <!-- Try to load a vendored Chart.js first (place chart.min.js in static/hc_app/vendor/), fallback to CDN if missing -->
+    <script src="{% static 'hc_app/vendor/chart.min.js' %}"></script>
+    <script>
+        (function(){
+            if (typeof Chart === 'undefined') {
+                var s = document.createElement('script');
+                s.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';
+                s.crossOrigin = 'anonymous';
+                document.head.appendChild(s);
+            }
+        })();
+    </script>
+    <script src="{% static 'hc_app/scripts/dashboard.js' %}"></script>
 {% endblock %}
