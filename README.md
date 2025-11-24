@@ -148,7 +148,11 @@ API uses OpenStreetMap data. This is used to verify and/or suggest addresses to 
 [Nominatim API] (https://nominatim.org/release-docs/latest/)
 
 ## List of Implemented Features
-
+- **User Login**
+- **Catalog and Search**
+- **Seller Dashboard**
+- **Checkout and Payment**
+- **Messaging System**
 
 
 
@@ -175,4 +179,6 @@ API uses OpenStreetMap data. This is used to verify and/or suggest addresses to 
   The site lacks ARIA labels and keyboard navigation enhancements for screen readers.
 - **Mobile responsiveness may vary**  
   While designed to be responsive, some layouts may break on smaller screens.
+- **EasyPost API**
+  Given the limitations for the testing version, the API will only work if either the buyer or seller is from the United States of America. A flat rate of Php 100 is set for locations based in the Philippines.
 
